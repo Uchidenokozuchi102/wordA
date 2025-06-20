@@ -1,0 +1,3897 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英単語暗記帳 (単語版)</title>
+    <style>
+        /* CSSは変更なし */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px; /* PC用padding */
+            background-color: #f0f4f8;
+            min-height: 100vh;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px 25px 25px; /* PC用padding */
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+        }
+        .settings-menu-button { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.8em; cursor: pointer; color: #555; padding: 5px; line-height: 1; }
+        .settings-menu-button:hover { color: #000; }
+        .settings-dropdown { position: absolute; top: 55px; right: 15px; background-color: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10; padding: 10px; display: none; }
+        .settings-dropdown button { display: block; width: 100%; padding: 10px 15px; font-size: 0.95em; text-align: left; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+        .settings-dropdown button:hover { background-color: #5a6268; }
+        .main-filters-container { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; margin-top: 10px; }
+        .group-filters, .status-filters { text-align: center; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+        .group-filters button, .status-filters button { padding: 8px 12px; font-size: 0.9em; border: 1px solid #ccc; border-radius: 16px; cursor: pointer; background-color: #f8f9fa; transition: background-color 0.2s, border-color 0.2s, color 0.2s; min-width: 85px; }
+        .group-filters button.active-group-filter,
+        .status-filters button.active-status-filter { background-color: #007bff; color: white; border-color: #007bff; font-weight: bold; }
+        .filter-title { font-size: 0.8em; color: #666; margin-bottom: 5px; text-align: center; font-weight: bold; }
+        .display-mode-switch { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 10px; font-size: 0.9em; color: #555; }
+        .display-mode-switch label { margin-right: 8px; }
+        .display-mode-switch input[type="checkbox"] { margin-left: 5px; transform: scale(1.1); cursor: pointer; }
+        #flashcard { position: relative; background-color: #fdfdfd; border: 1px solid #d1d9e0; border-radius: 10px; padding: 30px 20px; min-height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; margin-bottom: 20px; transition: background-color 0.3s; }
+        #flashcard.showing-meaning { background-color: #e9f5ff; }
+        #play-audio-button { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 1.5em; cursor: pointer; color: #777; padding: 5px; line-height: 1; z-index: 5; }
+        #play-audio-button:hover { color: #007bff; }
+        #play-audio-button.playing { color: #0056b3; }
+        #word-display { font-size: 2.2em; font-weight: bold; color: #2c3e50; text-align: center; padding-right: 40px; }
+        .details-display { font-size: 1em; color: #34495e; text-align: left; width: 100%; }
+        .details-display p { margin: 8px 0; line-height: 1.5; }
+        .details-display strong { font-size: 1.1em; color: #1a2530; }
+        .word-id-display { text-align: right; font-size: 0.8em; color: #888; margin-top: 10px; }
+        .hidden { display: none !important; }
+        .status-buttons { display: flex; justify-content: space-around; margin-bottom: 25px; gap: 10px; }
+        .status-buttons button { flex-grow: 1; padding: 10px 8px; font-size: 0.9em; border: 2px solid transparent; border-radius: 8px; cursor: pointer; transition: all 0.2s ease-in-out; opacity: 0.7; transform: scale(0.95); }
+        .status-buttons button.selected { font-size: 1em; font-weight: bold; opacity: 1; transform: scale(1); }
+        .status-buttons button.status-not-yet { background-color: #fff3cd; border-color: #ffeeba; color: #856404; }
+        .status-buttons button.status-learned { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        .status-buttons button.status-perfect { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .status-buttons button.status-not-yet.selected { background-color: #ffc107; color: #333; border-color: #e0a800;}
+        .status-buttons button.status-learned.selected { background-color: #17a2b8; color: white; border-color: #117a8b;}
+        .status-buttons button.status-perfect.selected { background-color: #28a745; color: white; border-color: #1c7430;}
+        .navigation { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
+        .nav-buttons-container { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; }
+        #progress-indicator { font-size: 0.9em; color: #555; }
+        #prev-button, #next-button { background-color: #007bff; color: white; padding: 10px 18px; border: none; border-radius: 8px; font-size: 1em; }
+        #prev-button:hover, #next-button:hover { background-color: #0056b3; }
+        #seek-bar { width: 100%; margin: 5px 0; }
+        #seek-bar:disabled { opacity: 0.5; cursor: not-allowed; }
+        #status-message { margin-top:15px; font-size: 0.95em; color: #495057; min-height: 1.3em; text-align: center; }
+        .no-words-message { text-align: center; font-size: 1.1em; color: #6c757d; padding: 25px 15px; border: 1px dashed #ced4da; border-radius: 8px; background-color: #f8f9fa; }
+
+        /* スマートフォン向けのスタイル調整 */
+        @media (max-width: 600px) {
+            body { padding: 10px; font-size: 14px; }
+            .container { padding: 15px 15px 15px; }
+            .settings-menu-button { font-size: 1.5em; top: 10px; right: 10px; }
+            .settings-dropdown { top: 45px; padding: 8px; }
+            .settings-dropdown button { padding: 8px 12px; font-size: 0.9em; }
+            .main-filters-container { gap: 10px; margin-bottom: 15px; margin-top: 5px; }
+            .group-filters, .status-filters { gap: 6px; }
+            .group-filters button, .status-filters button { padding: 6px 10px; font-size: 0.8em; min-width: 70px; }
+            .filter-title { font-size: 0.75em; margin-bottom: 3px; }
+            .display-mode-switch { margin-bottom: 8px; font-size: 0.85em; }
+            .display-mode-switch input[type="checkbox"] { transform: scale(1.0); }
+            #flashcard { padding: 15px 15px; min-height: 140px; margin-bottom: 15px; }
+            #play-audio-button { font-size: 1.3em; top: 8px; right: 8px; padding: 3px; }
+            #word-display { font-size: 1.8em; padding-right: 30px; }
+            .details-display { font-size: 0.9em; }
+            .details-display p { margin: 6px 0; line-height: 1.4; }
+            .details-display strong { font-size: 1.0em; }
+            .word-id-display { font-size: 0.75em; margin-top: 8px; }
+            .status-buttons { margin-bottom: 15px; gap: 8px; }
+            .status-buttons button { padding: 8px 6px; font-size: 0.8em; }
+            .status-buttons button.selected { font-size: 0.85em; }
+            .navigation { margin-bottom: 10px; }
+            .nav-buttons-container { margin-bottom: 8px; }
+            #progress-indicator { font-size: 0.85em; }
+            #prev-button, #next-button { padding: 8px 12px; font-size: 0.9em; }
+            #seek-bar { margin: 3px 0; }
+            #status-message { margin-top: 10px; font-size: 0.85em; min-height: 1.2em; }
+            .no-words-message { font-size: 1em; padding: 20px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="settings-menu-button" id="settings-toggle-button" aria-label="設定メニューを開く">⚙️</button>
+        <div class="settings-dropdown" id="settings-dropdown-menu">
+            <button id="reset-data-button">学習記録をリセット</button>
+        </div>
+
+        <div class="main-filters-container">
+             <div>
+                <div class="filter-title">単語グループを選択:</div>
+                <!-- 変更点: グループ分けを更新し、グループEを追加 -->
+                <div class="group-filters">
+                    <button id="group-filter-all" data-group="all_groups">全グループ</button>
+                    <button id="group-filter-a" data-group="A" data-range-prefix="A (1～100)">A (1～100)</button>
+                    <button id="group-filter-b" data-group="B" data-range-prefix="B (101～200)">B (101～200)</button>
+                    <button id="group-filter-c" data-group="C" data-range-prefix="C (201～300)">C (201～300)</button>
+                    <button id="group-filter-d" data-group="D" data-range-prefix="D (301～400)">D (301～400)</button>
+                    <button id="group-filter-e" data-group="E" data-range-prefix="E (401～500)">E (401～500)</button>
+                </div>
+            </div>
+            <div>
+                <div class="filter-title">学習状況で絞り込み:</div>
+                <div class="status-filters">
+                    <button id="status-filter-all" data-status-filter="all_statuses">全て</button>
+                    <button id="status-filter-not-yet" data-status-filter="not_yet">まだ</button>
+                    <button id="status-filter-learned" data-status-filter="learned">覚えた</button>
+                    <button id="status-filter-perfect" data-status-filter="perfect">完璧</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="display-mode-switch">
+            <label for="random-mode-checkbox">ランダム表示:</label>
+            <input type="checkbox" id="random-mode-checkbox">
+        </div>
+
+        <div id="flashcard-area">
+            <div id="flashcard">
+                <button id="play-audio-button" title="発音を聞く">🔊</button>
+                <div id="word-display">英単語</div>
+                <div id="details-display" class="hidden details-display">
+                    <p><strong>品詞:</strong> <span id="pos-span"></span></p>
+                    <p><strong>発音:</strong> <span id="pronunciation-span"></span></p>
+                    <p><strong>日本語訳:</strong> <span id="meaning-span"></span></p>
+                    <p id="notes-p" class="hidden"><strong>補足:</strong> <span id="notes-span"></span></p>
+                    <p id="example-en-p" class="hidden"><strong>例文 (英):</strong> <span id="example-en-span"></span></p>
+                    <p id="example-ja-p" class="hidden"><strong>例文 (日):</strong> <span id="example-ja-span"></span></p>
+                    <p class="word-id-display">ID: <span id="word-id-span"></span></p>
+                </div>
+            </div>
+            <div class="status-buttons">
+                <button id="status-btn-not-yet" data-status="not_yet" class="status-not-yet">まだ</button>
+                <button id="status-btn-learned" data-status="learned" class="status-learned">覚えた</button>
+                <button id="status-btn-perfect" data-status="perfect" class="status-perfect">完璧！</button>
+            </div>
+            <div class="navigation">
+                <div class="nav-buttons-container">
+                    <button id="prev-button">← 前へ</button>
+                    <span id="progress-indicator">1 / N</span>
+                    <button id="next-button">次へ →</button>
+                </div>
+                <input type="range" id="seek-bar" value="0" min="0" max="0">
+            </div>
+        </div>
+        <div id="no-words-message" class="hidden no-words-message">
+            この条件に一致する単語はありません。
+        </div>
+        <div id="status-message">カードをクリックすると詳細が表示/非表示されます。</div>
+    </div>
+
+    <script>
+        // --- 変更点: ここからJavaScriptの主要な変更箇所 ---
+
+        // 変更点: 単語データ内のIDを '0020' に修正
+        const wordTextData = `
+﻿1～
+動詞
+0001
+let
+[let]
+(let O do で) Oに〜させる、Oが〜するのを許す
+★ let-let-let
+▶ let me know about the plan
+計画について私に知らせる
+0002
+create
+[kriːˈeɪt]
+(を) つくり出す、(を) 創造する
+★ 名 creation 創造, 形 creative 創造的な
+▶ create new jobs
+新しい仕事をつくり出す
+0003
+cause
+[kɔːz]
+を引き起こす、の原因となる (⇔ prevent)
+★ 名 原因
+▶ cause a problem
+問題を引き起こす
+0004
+increase
+[ɪnˈkriːs]
+増加する、を増やす (⇔ decrease)
+★ 名 [ˈɪnkriːs] 増加
+▶ dramatically increase
+劇的に増加する
+0005
+leave
+[liːv]
+(leave O C で) OをCのままにしておく、を置き忘れる、(を) 去る (⇔ arrive at)
+★ leave-left-left
+▶ leave the lights on
+電灯をつけっぱなしにする
+0006
+develop
+[dɪˈveləp]
+を開発する、を発達させる、発達する
+★ 名 development 発達
+▶ develop a new product
+新製品を開発する
+0007
+reduce
+[rɪˈdjuːs]
+を減らす、を小さくする
+★ 名 reduction 減少、短縮、削減
+▶ reduce the number of students
+生徒の数を減らす
+0008
+improve
+[ɪmˈpruːv]
+を進歩 [向上] させる (⇔ worsen) 、良くなる
+★ 名 improvement 改善、進歩
+▶ improve sales by 30%
+売り上げを30%向上させる
+0009
+produce
+[prəˈdjuːs]
+(製品・農作物など) を作る、を引き起こす
+★ 名 production 生産, 名 product 製品
+▶ produce a film
+映画を制作する
+0010
+agree
+[əˈgriː]
+意見が一致する <with (人) と> (⇔ disagree) 、同意する <to (意見など) に>
+★ 名 agreement 一致、同意
+▶ agree with you
+あなたと同じ意見である
+0011
+tell
+[tel]
+がわかる、を見分ける <from 〜と> 、を知らせる
+★ tell-told-told
+▶ can't tell what will happen
+何が起こるかわからない
+0012
+allow
+[əˈlaʊ]
+を許す
+★ 名 allowance 許容量、手当
+▶ allow him to go
+彼が行くのを許す
+0013
+prepare
+[prɪˈpeər]
+(を) 準備する <to do 〜する、for 〜のために>
+★ 名 preparation 準備
+▶ prepare to go on a picnic
+ピクニックに行く準備をする
+0014
+own
+[oʊn]
+を所有している
+★ 形 自分自身の、特有の
+▶ own a private airplane
+自家用飛行機を所有している
+0015
+check
+[tʃek]
+(を) 検査 [点検] する
+★ 名 検査、会計伝票、小切手
+▶ check the tires
+タイヤを点検する
+0016
+suggest
+[səˈdʒest]
+を提案する、を示唆する
+▶ suggest that he (should) go
+彼が行くよう提案する
+0017
+cost
+[kɔːst]
+(費用) がかかる、費用がかかる
+★ 名 費用、犠牲
+▶ It costs 500 dollars to fly to Seattle.
+シアトルへ飛行機で行くのに500ドルかかる。
+0018
+meet
+[miːt]
+(要求・条件など) を満たす、に会う
+★ meet-met-met
+▶ meet one's conditions
+条件を満たす
+0019
+provide
+[prəˈvaɪd]
+を提供 [供給] する <for, to 〜に>
+★ 名 provision 供給、用意
+▶ provide lunch for the children
+子どもたちに昼食を提供する
+0020
+waste
+[weɪst]
+を浪費する <on 〜に> (⇔ save)
+★ 名 浪費、廃棄物, 形 廃棄物の、不用の
+▶ waste money on clothes
+服にお金を浪費する
+0021
+protect
+[prəˈtekt]
+を保護する <from, against 〜から>
+★ 形 protective 保護する, 名 protection 保護
+▶ protect a child from danger
+子どもを危険から守る
+0022
+offer
+[ˈɔːfər]
+を申し出る、を提供する
+★ 名 申し出、提供
+▶ offer help
+援助を申し出る
+0023
+describe
+[dɪˈskraɪb]
+(の特徴) を述べる、を描写する
+★ 名 description 記述
+▶ describe the missing dog
+行方不明の犬の特徴を述べる
+0024
+damage
+[ˈdæmɪdʒ]
+に損傷 [損害] を与える
+★ 名 損傷、損害
+▶ be badly damaged
+ひどく損傷を受けている
+0025
+disagree
+[ˌdɪsəˈgriː]
+意見が食い違う <on 〜について、with 〜と> (⇔ agree) 、一致しない <with 〜と>
+★ 名 disagreement 意見の相違、不一致
+▶ disagree on that point
+その点で意見が合わない
+0026
+recommend
+[ˌrekəˈmend]
+を推薦する <to 〜に>
+★ 名 recommendation 推薦
+▶ recommend a good movie to everyone
+みんなに良い映画を薦める
+0027
+repair
+[rɪˈpeər]
+を修理する (⇔ damage)
+★ 名 修理
+▶ have my washing machine repaired
+洗濯機を修理してもらう
+0028
+share
+[ʃeər]
+を共有する <with 〜と> 、を分け合う
+★ 名 分け前、役割
+▶ share a room with a friend
+友人と部屋を共有する
+0029
+follow
+[ˈfɑːloʊ]
+に続く、についていく、(命令・規則など) に従う
+★ 形 following (the 〜) 次の、以下の
+▶ One misfortune followed another.
+不幸が次々続いた。
+0030
+lead
+[liːd]
+つながる <to 〜に> 、を導く、(生活・人生) を送る
+★ lead-led-led
+▶ lead to a new idea
+新しい考えにつながる
+0031
+attract
+[əˈtrækt]
+(注意・興味など) を引く、を魅惑する
+★ 名 attraction 人を引き付けるもの, 形 attractive 魅力的な
+▶ attract her attention
+彼女の注意を引く
+0032
+encourage
+[ɪnˈkɜːrɪdʒ]
+を促す、を勇気づける (⇔ discourage)
+★ 名 encouragement 励ましとなるもの
+▶ encourage him to study
+彼に勉強するよう促す
+0033
+support
+[səˈpɔːrt]
+を支持 [支援] する (⇔ oppose) 、を扶養する
+★ 名 支持、扶養, 形 supportive 支えとなる
+▶ support one's opinion
+意見を支持する
+0034
+raise
+[reɪz]
+(子ども) を育てる [≒ bring up] 、(資金など) を調達する
+▶ I was born and raised in this town.
+私はこの町で生まれ育った。
+0035
+hire
+[ˈhaɪər]
+を雇う (⇔ fire, dismiss) 、を賃借りする
+▶ hire a waiter
+ウェイターを雇う
+0036
+charge
+[tʃɑːrdʒ]
+(税金など) を課す <on 〜に> 、(金額) を請求する <for 〜とて> 、を告発する <with 〜で>
+★ 名 料金、告発
+▶ charge a tax on cars
+車に課税する
+0037
+care
+[keər]
+気にかける <about 〜について>
+★ 名 心配、注意、世話
+▶ care about one's health
+健康を気にかける
+0038
+book
+[bʊk]
+を予約する [＝ reserve]
+★ 名 本, 名 booking 予約
+▶ book a table
+(レストランなどの) 席を予約する
+0039
+store
+[stɔːr]
+を蓄える、を貯蔵する
+★ 名 店
+▶ store food for winter
+冬に備えて食料を蓄える
+0040
+train
+[treɪn]
+を訓練する
+★ 名 列車, 名 training 訓練
+▶ train a dog
+犬を訓練する
+0041
+last
+[læst]
+続く、持続する (⇔ end)
+★ last 「この前の」は同音同綴の異義語
+▶ The war lasted (for) ten years.
+戦争は10年間続いた。
+0042
+park
+[pɑːrk]
+を駐車する
+★ 名 公園
+▶ park a car
+車を駐車する
+0043
+run
+[rʌn]
+を経営 [運営] する、立候補する、走る
+★ run-ran-run
+▶ run a restaurant
+レストランを経営する
+名詞
+0044
+pay
+[peɪ]
+給料、賃金
+★ 動 を支払う <to 〜に>, 名 payment 支払い
+▶ get better pay than now
+今より良い給料をもらう
+0045
+brain
+[breɪn]
+頭脳、脳
+▶ have good brains
+頭が良い
+0046
+customer
+[ˈkʌstəmər]
+顧客
+▶ a regular customer
+固定客
+0047
+order
+[ˈɔːrdər]
+順番、秩序、注文
+★ 動 を注文する、を命じる
+▶ in alphabetical order
+アルファベット順に
+0048
+research
+[ˈriːsɜːrtʃ]
+調査、研究
+★ 動 [rɪˈsɜːrtʃ] (を) 研究 [調査] する <into, on 〜を>
+▶ market research
+市場調査
+0049
+environment
+[ɪnˈvaɪərənmənt]
+環境
+★ 形 environmental 環境の
+▶ natural environment
+自然環境
+0050
+result
+[rɪˈzʌlt]
+結果
+★ 動 結果として生じる <from 〜の> 、結果になる <in 〜という>
+▶ the final result
+最終結果
+0051
+amount
+[əˈmaʊnt]
+量、金額、総計
+★ 動 総計〜になる <to 〜>
+▶ a large amount of waste
+大量の廃棄物
+0052
+situation
+[ˌsɪtʃuˈeɪʃn]
+状況、立場
+▶ in the present situation
+現況では
+0053
+garbage
+[ˈgɑːrbɪdʒ]
+ゴミ、生ゴミ
+▶ take the garbage out
+ゴミを出す
+0054
+device
+[dɪˈvaɪs]
+装置、工夫
+★ 動 devise を工夫する
+▶ a measuring device
+計測装置
+0055
+exercise
+[ˈeksərsaɪz]
+運動、練習
+★ 動 運動する、練習する
+▶ get regular exercise
+定期的に運動する
+0056
+skill
+[skɪl]
+技能、能力、熟練
+★ 形 skilled 熟練した, 形 skillful 熟練した
+▶ develop communication skills
+コミュニケーション能力を磨く
+0057
+metal
+[ˈmetl]
+金属
+▶ recycle plastic and metal
+プラスチックや金属を再生利用する
+0058
+electricity
+[ɪˌlekˈtrɪsəti]
+電気、電力
+★ 形 electric 電気の
+▶ save electricity
+節電する
+0059
+traffic
+[ˈtræfɪk]
+交通 (量)
+▶ heavy traffic
+激しい交通量
+0060
+stress
+[stres]
+(心身への) ストレス、圧迫感
+★ 動 に緊張を与える, 形 stressful ストレスの多い
+▶ reduce stress
+ストレスを軽減する
+0061
+employee
+[ɪmˈplɔɪiː]
+従業員 (⇔ employer)
+★ 動 employ を雇う, 名 employment 雇用
+▶ a public employee
+公務員
+0062
+education
+[ˌedʒəˈkeɪʃn]
+教育
+★ 動 educate を教育する
+▶ receive a better education
+より良い教育を受ける
+0063
+presentation
+[ˌprezənˈteɪʃn]
+発表、プレゼンテーション、贈呈、提出
+★ 動 present を発表する、を贈る 名 贈り物
+▶ make [give] a presentation
+プレゼンテーションを行う
+0064
+design
+[dɪˈzaɪn]
+デザイン、設計 (図) 、計画
+★ 動 を設計する、をデザインする
+▶ interior design
+インテリアデザイン
+0065
+experience
+[ɪkˈspɪəriəns]
+経験
+★ 動 を経験する
+▶ have a good experience
+良い経験をする
+0066
+expert
+[ˈekspɜːrt]
+専門家、熟練者 (⇔ amateur)
+★ 形 [ˈekspɜːrt, ɪkˈspɜːrt] 熟練した
+▶ a legal expert
+法律の専門家
+0067
+fact
+[fækt]
+事実 (⇔ fiction)
+▶ check the facts
+事実を確認する
+0068
+staff
+[stæf]
+スタッフ、職員
+▶ a staff member
+スタッフの一員
+0069
+fuel
+[ˈfjuːəl]
+燃料
+★ 動 に燃料を補給する
+▶ run out of fuel
+燃料を使い果たす
+0070
+tour
+[tʊər]
+見学、(周遊) 旅行、巡業
+▶ a guided factory tour
+ガイド付きの工場見学
+0071
+taste
+[teɪst]
+好み (⇔ dislike) 、味、味覚
+★ 動 の味がする、(を) 味わう, 形 tasty おいしい
+▶ a question of personal taste
+個人の好みの問題
+0072
+benefit
+[ˈbenɪfɪt]
+利益、恩恵
+★ 動 利益を得る <from 〜から> 、のためになる, 形 beneficial 有益な
+▶ economic benefits
+経済的利益
+0073
+practice
+[ˈpræktɪs]
+実践 (⇔ theory) 、習慣、練習
+★ 動 (を) 練習する、(を) 実践する, 形 practical 実践的な
+▶ come into practice
+実行に移される
+0074
+activity
+[ækˈtɪvəti]
+活動
+★ 形 active 活動的な
+▶ club activities
+クラブ活動
+0075
+subject
+[ˈsʌbdʒekt]
+話題、教科
+▶ change the subject
+話題を変える
+0076
+professor
+[prəˈfesər]
+教授
+▶ a professor at a university
+大学教授
+0077
+memory
+[ˈmeməri]
+記憶 (力) 、思い出
+★ 名 memorial 記念物 形 記念の
+▶ have a good memory
+記憶力が良い
+0078
+effect
+[ɪˈfekt]
+影響、効果、結果
+★ 形 effective 効果的な
+▶ have an effect on society
+社会に影響を及ぼす
+0079
+patient
+[ˈpeɪʃnt]
+患者
+★ 形 忍耐強い、根気のある
+▶ patients with skin problems
+皮膚に問題のある患者
+0080
+project
+[ˈprɑː(ː)dʒekt]
+(組織的) 計画、事業、学習課題
+★ 動 [prəˈdʒekt] を計画する
+▶ a public works project
+公共事業の計画
+0081
+article
+[ˈɑːrtɪkl]
+記事、条項、1品
+▶ the article on the front page of the paper
+新聞の一面記事
+0082
+material
+[məˈtɪəriəl]
+材料、資料
+★ 形 物質の、物質的な、肉体的な, 名 materially 物質的に
+▶ the finest materials
+最高の材料
+0083
+bill
+[bɪl]
+請求書 (⇔ receipt) 、法案、紙幣
+★ 動 に請求書を出す
+▶ a phone bill
+電話料金の請求書
+0084
+technology
+[tekˈnɑː(ː)lədʒi]
+科学技術、テクノロジー
+▶ advanced technology
+進歩した科学技術
+0085
+security
+[sɪˈkjʊərəti]
+安全 [≒ safety] 、警備、安心 (⇔ insecurity)
+★ 形 secure 安全な、確かな
+▶ a security check
+(所持品などを確かめる) 安全点検
+0086
+discount
+[ˈdɪskaʊnt]
+割引
+★ 動 を割引する
+▶ get a 10% discount
+10%の割引を得る
+0087
+review
+[rɪˈvjuː]
+批評、(再) 調査、復習
+★ 動 の批評を書く、を再検討する
+▶ write a review of a book
+本の批評を書く
+0088
+flight
+[flaɪt]
+定期航空便、飛行
+★ 動 fly 飛ぶ、飛行機で行く
+▶ take a flight from Tokyo to London
+東京発ロンドン行きの便に乗る
+0089
+smartphone
+[ˈsmɑːrtfoʊn]
+スマートフォン
+▶ turn off one's smartphone
+スマートフォンの電源を切る
+0090
+supplement
+[ˈsʌplɪmənt]
+サプリメント、栄養補助剤
+▶ take supplements
+サプリメントを摂取する
+形容詞
+0091
+chemical
+[ˈkemɪkl]
+化学の
+★ 名 化学製品 [薬品], 名 chemistry 化学
+▶ a chemical reaction
+化学反応
+0092
+ancient
+[ˈeɪnʃənt]
+古代の
+★ 名 古代人
+▶ people in ancient Europe
+古代ヨーロッパの人々
+0093
+common
+[ˈkɑː(ː)mən]
+共通の、普通の
+★ 副 commonly 一般に
+▶ a common language
+共通語
+0094
+likely
+[ˈlaɪkli]
+〜しそうで、ありそうな (⇔ unlikely)
+★ 名 likelihood ありそうなこと、可能性
+▶ It is likely to rain.
+雨が降りそうだ。
+副詞
+0095
+recently
+[ˈriːsntli]
+最近
+★ 通例完了形、過去時制とともに用いられる
+▶ Recently, I started jogging.
+私は最近ジョギングを始めた。
+0096
+probably
+[ˈprɑː(ː)bəbli]
+たぶん、きっと
+★ 形 probable ありそうな、(きっと) 起こりそうな
+▶ That's probably true.
+それはたぶん本当だ。
+0097
+actually
+[ˈæktʃuəli]
+実は、実際には
+★ 形 actual 実際の
+▶ He is actually a good cook.
+彼は実は料理が上手だ。
+接続詞
+0098
+though
+[ðoʊ]
+･･･だけれども [≒ although] 、もっとも･･･ではあるが
+▶ Though I was tired, I got up early.
+私は疲れていたが、早起きした。
+0099
+while
+[hˈwaɪl]
+･･･している間に、･･･の一方で、･･･ではあるものの
+▶ while you were sleeping
+あなたが寝ていた間に
+0100
+whether
+[ˈhweðər]
+･･･かどうか [≒ if] 、(しばしばwhether ... or notで) ･･･であろうとなかろうと
+▶ whether he can come
+彼が来られるかどうか
+101～
+動詞
+0101
+form
+[fɔːrm]
+を組織する、を形作る
+★ 名 形、型、(記入するための) 用紙
+▶ form a rock band
+ロックバンドを結成する
+0102
+cancel
+[ˈkænsəl]
+を取り消す
+★ 名 cancellation 取り消し
+▶ cancel an order
+注文を取り消す
+0103
+relax
+[rɪˈlæks]
+くつろぐ、緩む、をくつろがせる
+★ 名 relaxation くつろぎ、緩和
+▶ relax over a cup of coffee
+コーヒーを1杯飲みながらくつろぐ
+0104
+add
+[æd]
+を加える <to 〜に>
+★ 名 addition 追加
+▶ add some sugar to the tea
+紅茶に砂糖を加える
+0105
+contact
+[ˈkɑː(ː)ntækt]
+と連絡を取る、と接触する
+★ 名 連絡、接触
+▶ contact the police
+警察に連絡する
+0106
+purchase
+[ˈpɜːrtʃəs]
+(高価な物・大量の物) を購入する
+★ 名 購入、買ったもの
+▶ purchase a house
+家を購入する
+0107
+expect
+[ɪkˈspekt]
+を予期する、を期待する
+★ 名 expectation 予想、期待
+▶ as expected
+予想した通りに
+0108
+continue
+[kənˈtɪnju(ː)]
+を続ける <to do, doing 〜すること> 、続く (⇔ stop)
+★ 形 continual 頻繁な, 形 continuous 絶え間ない
+▶ continue to increase
+増え続ける
+0109
+require
+[rɪˈkwaɪər]
+を要求する、を必要とする
+★ 名 requirement 必要条件
+▶ be required to wear a helmet
+ヘルメットの着用が求められる
+0110
+replace
+[rɪˈpleɪs]
+を取り替える <with 〜と> 、に取って代わる
+★ 名 replacement 取り替え、交替
+▶ replace a carpet with a new one
+カーペットを新しいものと取り替える
+0111
+suffer
+[ˈsʌfər]
+苦しむ <from 〜で> 、患う <from 〜を>
+★ 名 suffering 苦しみ
+▶ suffer from pain
+痛みで苦しむ
+0112
+fix
+[fɪks]
+を修理する、(を) 固定する <in, on, to 〜に>
+▶ fix the doorknob
+ドアの取っ手を修理する
+0113
+serve
+[sɜːrv]
+(に) 食事を出す、(に) 仕える、(に) 役立つ
+★ 名 service サービス、接客, 名 servant 使用人、召使
+▶ serve him a steak
+彼にステーキを出す
+0114
+include
+[ɪnˈkluːd]
+を含む (⇔ exclude)
+★ 名 inclusion 含むこと
+▶ Tax is included in the price.
+価格には税が含まれている。
+0115
+attend
+[əˈtend]
+に出席する、に (定期的に) 通う
+★ 名 attendance 出席
+▶ attend a seminar
+セミナーに出席する
+0116
+quit
+[kwɪt]
+をやめる (⇔ continue)
+★ quit-quit-quit
+▶ quit one's job
+仕事をやめる
+0117
+prefer
+[prɪˈfɜːr]
+の方を好む <to 〜よりも>
+★ 名 preference 好み
+▶ prefer fish to meat
+肉よりも魚を好む
+0118
+recycle
+[ˌriːˈsaɪkl]
+(を) 再生利用する
+▶ recycle old newspapers
+古新聞を再生利用する
+0119
+face
+[feɪs]
+に直面する、の方に顔を向ける
+★ 名 顔、表情
+▶ face a problem
+問題に直面する
+0120
+invent
+[ɪnˈvent]
+を発明する、を考案する
+★ 名 invention 発明
+▶ invent a new technique
+新しい技術を考案する
+0121
+prevent
+[prɪˈvent]
+を防ぐ、を妨げる
+★ 名 prevention 防止
+▶ prevent crime
+犯罪を防ぐ
+0122
+decrease
+[dɪˈkriːs]
+を減らす、減少する (⇔ increase)
+★ 名 [ˈdiːkriːs] 減少 <in 〜における>
+▶ decrease the number of traffic accidents
+交通事故の件数を減らす
+0123
+attach
+[əˈtætʃ]
+を添付する、を取り付ける <to 〜に>
+★ 名 attachment 添付書類、付属品、愛着
+▶ attach a file to a message
+メッセージにファイルを添付する
+0124
+shape
+[ʃeɪp]
+を形作る、を形成する
+★ 名 形、(健康) 状態
+▶ shape one's lifestyle
+生活スタイルを形成する
+0125
+fill
+[fɪl]
+を満たす <with 〜で> (⇔ empty) 、をふさぐ
+▶ fill a bucket with water
+水でバケツを満たす
+0126
+exchange
+[ɪksˈtʃeɪndʒ]
+を交換し合う <with (人) と> 、を交換する
+★ 名 交換、交流
+▶ exchange information with other students
+ほかの生徒と情報を交換し合う
+0127
+realize
+[ˈriːəlaɪz]
+に気づく、を悟る、を実現する
+★ 名 realization 認識、実現
+▶ realize that it is raining
+雨が降っていることに気づく
+0128
+lower
+[ˈloʊər]
+を下げる、を低くする
+★ 形 低い方の、下位の
+▶ lower the price
+値段を下げる
+0129
+guess
+[ges]
+だと思う、を推測する
+▶ guess that he is not coming
+彼は来ないと思う
+0130
+gain
+[geɪn]
+を得る (⇔ lose) 、を増す
+★ 名 利益、増加
+▶ gain work experience
+労働経験を得る
+0131
+suit
+[suːt]
+に似合う、に都合が良い
+★ 名 訴訟、スーツ, 形 suitable 適した
+▶ a hat that suits her well
+彼女によく似合う帽子
+0132
+land
+[lænd]
+着陸する、上陸する、を着陸 [上陸] させる
+★ 名 陸、土地
+▶ land at the airport
+空港に着陸する
+0133
+award
+[əˈwɔːrd]
+(award A B で) AにB (賞など) を与える
+★ 名 賞
+▶ be awarded first prize
+1等賞が与えられる
+名詞
+0134
+statement
+[ˈsteɪtmənt]
+陳述、声明
+★ 動 state をはっきり述べる
+▶ make a statement
+陳述する、声明を出す
+0135
+insect
+[ˈɪnsekt]
+虫、昆虫
+▶ a harmful insect
+害虫
+0136
+department
+[dɪˈpɑːrtmənt]
+部門、(大学の) 学部、学科
+▶ the sales department
+営業 [販売] 部
+0137
+membership
+[ˈmembərʃɪp]
+会員資格
+▶ membership of the golf club
+ゴルフクラブの会員資格
+0138
+fat
+[fæt]
+脂肪
+★ 形 太った
+▶ cut down on fat
+脂肪の摂取を減らす
+0139
+sentence
+[ˈsentəns]
+文
+▶ write a simple sentence
+簡単な文を書く
+0140
+community
+[kəˈmjuːnəti]
+地域社会、共同体、コミュニティ
+▶ in the local community
+地元の地域社会で
+0141
+instrument
+[ˈɪnstrəmənt]
+機器、装置、楽器
+★ 形 instrumental 助けとなる、器械の、楽器の
+▶ a medical instrument
+医療機器
+0142
+focus
+[ˈfoʊkəs]
+焦点
+★ 動 の焦点を合わせる <on 〜に>
+▶ be in [out of] focus
+焦点が合って [外れて] いる
+0143
+client
+[ˈklaɪənt]
+顧客、(弁護士などへの) 依頼人
+★ 一般に、client は「サービス」を買う客、customer は「商品」を買う客
+▶ a meeting with clients
+顧客との会議
+0144
+bacteria
+[bækˈtɪəriə]
+細菌、バクテリア
+★ bacterium の複数形
+▶ kill bacteria
+細菌を死滅させる
+0145
+retirement
+[rɪˈtaɪərmənt]
+(定年による) 退職、引退
+★ 動 retire 定年退職する
+▶ life after retirement
+退職後の生活
+0146
+nature
+[ˈneɪtʃər]
+性質、自然
+★ 形 natural 自然の, 副 naturally 自然に
+▶ human nature
+人間性
+0147
+earth
+[ɜːrθ]
+(the earth もしくは (the) Earth で) 地球
+▶ protect the earth
+地球を守る
+0148
+grocery
+[ˈgroʊsəri]
+食料雑貨店、(〜 ies) 食料雑貨類
+▶ a grocery store
+食料雑貨店
+0149
+trash
+[træʃ]
+ゴミ [≒ garbage]
+▶ pick up trash
+ゴミを拾う
+0150
+method
+[ˈmeθəd]
+(研究・調査などの) 方法、秩序
+▶ an effective method
+効果的な方法
+0151
+site
+[saɪt]
+場所、用地、ウェブサイト
+▶ visit famous sites in town
+町の名所を訪れる
+0152
+tablet
+[ˈtæblət]
+タブレット
+▶ a tablet computer
+タブレットコンピューター
+0153
+organization
+[ˌɔːrgənəˈzeɪʃn]
+組織、団体
+★ 動 organize を計画 [準備] する、を組織する
+▶ form an organization
+団体を創設する
+0154
+treatment
+[ˈtriːtmənt]
+治療、扱い
+★ 動 treat を扱う
+▶ receive treatment
+治療を受ける
+0155
+farming
+[ˈfɑːrmɪŋ]
+農業 [≒ agriculture]
+▶ technologies in farming
+農業における科学技術
+0156
+case
+[keɪs]
+場合、事例
+▶ in most cases
+たいていの場合
+0157
+announcement
+[əˈnaʊnsmənt]
+アナウンス、発表、告知
+★ 動 announce を公表する
+▶ an announcement in English
+英語のアナウンス
+0158
+author
+[ˈɔːθər]
+著者、作家
+▶ an author of a popular novel
+人気小説の著者
+0159
+biology
+[baɪˈɑː(ː)lədʒi]
+生物学
+★ 名 biologist 生物学者
+▶ a professor of biology
+生物学の教授
+0160
+advertisement
+[ˌædvərˈtaɪzmənt]
+広告、宣伝
+★ 動 advertise を宣伝 [広告] する
+▶ an advertisement for the soccer club
+サッカークラブの広告
+0161
+account
+[əˈkaʊnt]
+口座、説明、勘定
+▶ a bank account
+銀行口座
+0162
+data
+[ˈdeɪtə]
+データ
+★ datum の複数形
+▶ collect the data
+データを集める
+0163
+solution
+[səˈluːʃn]
+解決 (策) 、解答
+★ 動 solve を解く
+▶ find a solution to the problem
+問題の解決策を見つける
+0164
+harm
+[hɑːrm]
+害 (⇔ good) 、悪意
+★ 形 harmful 有害な
+▶ cause serious harm
+重大な損害を与える
+0165
+competition
+[ˌkɑː(ː)mpəˈtɪʃn]
+競技 (会) 、コンクール、競争
+★ 動 compete 競争する, 形 competitive 競争力のある
+▶ enter a competition
+競技会に出場する
+0166
+industry
+[ˈɪndəstri]
+産業、勤勉
+★ 形 industrial 産業の, 形 industrious 勤勉な
+▶ heavy industry
+重工業
+0167
+participant
+[pɑːrˈtɪsɪpənt]
+参加者
+★ 動 participate 参加する
+▶ participants in a marathon race
+マラソンの参加者たち
+0168
+charity
+[ˈtʃærəti]
+慈善 (事業)
+▶ raise money for a charity
+慈善事業のために金を集める
+0169
+medicine
+[ˈmedsən]
+薬、医学
+★ 形 medical 医学の
+▶ take medicine
+薬を服用する
+0170
+opinion
+[əˈpɪnjən]
+意見
+▶ public opinion
+世論
+0171
+payment
+[ˈpeɪmənt]
+支払い
+★ 動 pay を支払う <to 〜に>
+▶ make a payment
+支払いをする
+0172
+population
+[ˌpɑː(ː)pjuˈleɪʃn]
+人口、(動物の) 総数
+▶ a small [large] population
+少ない [多い] 人口
+0173
+access
+[ˈækses]
+入手方法、接近方法、アクセス
+▶ have access to clean water
+きれいな水が手に入る
+0174
+generation
+[ˌdʒenəˈreɪʃn]
+(同) 世代、年齢層、1世代 (約30年間)
+★ 動 generate を生み出す
+▶ a gap between generations
+世代間のギャップ
+0175
+resident
+[ˈrezɪdənt]
+居住者 (⇔ nonresident) 、滞在者
+★ 名 residence 住宅、居住
+▶ Japanese residents in Britain
+在英日本人
+0176
+quality
+[ˈkwɑː(ː)ləti]
+質 (⇔ quantity) 、良質、特性
+★ 形 良質の
+▶ the quality of life
+生活の質
+0177
+distance
+[ˈdɪstəns]
+距離、遠方
+★ 形 distant 遠い
+▶ the distance from here to the store
+ここから店までの距離
+0178
+variety
+[vəˈraɪəti]
+種類、多様性 <of 〜の>
+★ 形 various さまざまな
+▶ increase the variety of products
+製品の種類を増やす
+0179
+career
+[kəˈrɪər]
+職業、経歴
+▶ a medical career
+医療の職
+0180
+item
+[ˈaɪtəm]
+品目、項目、〜個
+▶ items on the product list
+製品リストの品目
+0181
+view
+[vjuː]
+見解、見方、視野、眺め
+★ 動 を見る
+▶ from a practical point of view
+実用的な観点から
+形容詞
+0182
+present
+[ˈpreznt]
+現在の、出席している (⇔ absent)
+★ 名 現在, 名 presence 存在、出席
+▶ one's present job
+今の仕事
+0183
+recent
+[ˈriːsnt]
+最近の
+▶ in recent years
+近年
+0184
+available
+[əˈveɪləbl]
+手に入る、利用できる、手が空いている
+★ 名 availability 利用できること
+▶ be available online
+オンラインで手に入る
+0185
+extra
+[ˈekstrə]
+余分の、追加の
+▶ pay extra money
+追加料金を支払う
+0186
+successful
+[səkˈsesfəl]
+成功した (⇔ unsuccessful)
+★ 名 success 成功, 副 successfully うまく
+▶ The event was highly successful.
+そのイベントは見事に成功を収めた。
+0187
+nearby
+[ˌnɪrˈbaɪ]
+すぐ近くの
+★ 副 すぐ近くに [で]
+▶ a nearby bookstore
+近くの書店
+0188
+certain
+[ˈsɜːrtn]
+一定の、確信して (⇔ uncertain, unsure)
+★ 副 certainly 確かに、きっと
+▶ a certain number of hours
+一定の時間
+0189
+similar
+[ˈsɪmələr]
+類似した <to 〜に> (⇔ different)
+★ 名 similarity 類似
+▶ a sweater similar to mine
+私のとよく似たセーター
+0190
+various
+[ˈveəriəs]
+さまざまな [≒ different] (⇔ similar)
+★ 動 vary 変わる、異なる、を変える, 名 variety 種類、多様性
+▶ for various reasons
+さまざまな理由で
+0191
+effective
+[ɪˈfektɪv]
+効果的な、有効な
+▶ an effective way
+効果的な方法
+0192
+huge
+[hjuːdʒ]
+ばく大な、巨大な (⇔ tiny)
+▶ a huge profit
+ばく大な利益
+0193
+serious
+[ˈsɪəriəs]
+深刻な、まじめな、重大な (⇔ unimportant)
+★ 副 seriously 深刻に、まじめに、重大に
+▶ a serious illness
+深刻な病気
+0194
+social
+[ˈsoʊʃəl]
+社会の、社会的な
+★ 名 society 社会
+▶ a social problem
+社会問題
+副詞
+0195
+nowadays
+[ˈnaʊədeɪz]
+近ごろは、今日では [≒ today]
+▶ Nowadays, many people read the news online.
+近ごろは、多くの人がオンラインでニュースを読む。
+0196
+somewhere
+[ˈsʌmhweər]
+どこかに [で／へ]
+▶ leave one's wallet somewhere
+どこかに財布を置き忘れる
+0197
+moreover
+[mɔːˈroʊvər]
+その上 [≒ besides, furthermore]
+▶ This dress is beautiful. Moreover, it's not that expensive.
+このドレスは美しい。その上、それほど高くない。
+0198
+sincerely
+[sɪnˈsɪərli]
+心から、誠実に
+★ 名 sincerity 誠実, 形 sincere 心からの, ★ 手紙やメールの結び文句としてよく使用される
+▶ Sincerely (yours) ,
+敬具
+0199
+rather
+[ˈræðər]
+かなり、むしろ、多少
+▶ be rather tired
+かなり疲れている
+0200
+originally
+[əˈrɪdʒənəli]
+本来 (は) 、最初 (は) 、もともと
+★ 名 origin 起源, 形 original 最初の、独創的な
+▶ The meeting was originally scheduled for July.
+その会議は本来7月に予定されていた。
+201～
+動詞
+0201
+avoid
+[əˈvɔɪd]
+を避ける
+★ 名 avoidance 避けること、回避
+▶ avoid staring at people
+人々をじろじろ見るのを避ける
+0202
+contain
+[kənˈteɪn]
+を含む
+★ 名 container 容器, 名 content 中身
+▶ contain useful information
+役に立つ情報を含む
+0203
+manage
+[ˈmænɪdʒ]
+を管理 [経営] する、を何とかやり遂げる <to do 〜すること>
+★ 名 management 管理、経営
+▶ manage one's garden
+庭を管理する
+0204
+consider
+[kənˈsɪdər]
+をみなす <as 〜と> 、をよく考える
+★ 形 considerate 思いやりのある
+▶ be considered as harmful
+有害だとみなされている
+0205
+remove
+[rɪˈmuːv]
+を取り除く <from 〜から> (⇔ insert)
+★ 名 removal 除去
+▶ remove bones from fish
+魚から骨を取り除く
+0206
+organize
+[ˈɔːrgənaɪz]
+を計画 [準備] する、を組織する
+★ 名 organization 組織、団体
+▶ organize a party
+パーティーを計画する
+0207
+examine
+[ɪgˈzæmɪn]
+を検査する、を調べる
+★ 名 examination 試験、検査
+▶ examine the effects of a medicine
+薬の効果を調べる
+0208
+publish
+[ˈpʌblɪʃ]
+を発表する、を出版する
+★ 名 publication 出版 (物), 名 publisher 出版社
+▶ publish a paper
+論文を発表する
+0209
+affect
+[əˈfekt]
+に影響を及ぼす
+★ 主に好ましくない変化に用いる
+▶ affect the growth of the rice
+米の生育に (悪) 影響を及ぼす
+0210
+treat
+[triːt]
+を扱う <with 〜の態度をもって、like 〜のように> 、をみなす <as 〜と> 、を治療する
+★ 名 treatment 扱い、治療
+▶ be treated with care
+慎重に扱われる
+0211
+participate
+[pɑːrˈtɪsɪpeɪt]
+参加する <in 〜に> [≒ take part]
+★ 名 participation 参加
+▶ participate in the Olympics
+オリンピックに参加する
+0212
+appear
+[əˈpɪər]
+のように見える、現れる (⇔ disappear)
+★ 名 appearance 出現、外観
+▶ The story appears to be true.
+その話は本当のようだ。
+0213
+rent
+[rent]
+を賃借りする <from 〜から> 、を賃貸しする <to 〜に>
+★ 名 賃貸料
+▶ rent an apartment from one's uncle
+おじからアパートを借りている
+0214
+graduate
+[ˈgrædʒueɪt]
+卒業する <from 〜を>
+★ 名 [ˈgrædʒuət] 卒業生, 名 graduation 卒業
+▶ graduate from the university
+大学を卒業する
+0215
+communicate
+[kəˈmjuːnɪkeɪt]
+意思疎通する <with 〜と> 、を伝える
+★ 名 communication 意思の疎通、コミュニケーション
+▶ communicate with each other by e-mail
+Eメールでお互いに連絡を取り合う
+0216
+afford
+[əˈfɔːrd]
+を持つ [する] 余裕がある
+★ 形 affordable 入手可能な、安価な
+▶ can't afford to buy a car
+車を買う余裕がない
+0217
+donate
+[ˈdoʊneɪt]
+を寄付する
+★ 名 donation 寄付 (金) 、提供 (物)
+▶ donate ten dollars to a hospital
+病院に10ドルを寄付する
+0218
+promise
+[ˈprɑː(ː)məs]
+(に) 約束する <to do 〜することを>
+★ 名 約束
+▶ promise (you) to come home by six
+6時までに帰宅すると約束する
+0219
+remain
+[rɪˈmeɪn]
+のままである、残っている
+★ 名 remainder 残り
+▶ The problem remains unsolved.
+その問題は未解決のままだ。
+0220
+locate
+[ˈloʊkeɪt]
+(be located in [on] 〜で) 〜に位置する
+★ 名 location 位置、場所
+▶ be located in a quiet area
+静かな地域に位置する
+0221
+match
+[mætʃ]
+(と) 調和する、に匹敵する
+★ 名 試合
+▶ This jacket matches these pants.
+この上着はこのズボンと合う。
+0222
+kill
+[kɪl]
+(時間・計画) をつぶす、を殺す
+▶ kill a few hours
+2、3時間つぶす
+0223
+occur
+[əˈkɜːr]
+思い浮かぶ <to 〜に> 、起こる
+★ 名 occurrence 出来事
+▶ An idea occurred to me.
+ある考えが私の心に思い浮かんだ。
+0224
+employ
+[ɪmˈplɔɪ]
+を雇う、を用いる
+★ 名 employment 雇用, 名 employee 従業員
+▶ employ experts
+専門家を雇う
+0225
+involve
+[ɪnˈvɑː(ː)lv]
+を巻き込む <in 〜に> 、を含む
+★ 名 involvement 巻き込まれること、関与
+▶ be involved in an accident
+事故に巻き込まれる
+0226
+perform
+[pərˈfɔːrm]
+(を) 演じる、(を) 演奏する、を行う
+★ 名 performance 公演、実行
+▶ perform in a huge hall
+巨大なホールで演じる
+0227
+spread
+[spred]
+広まる、を広げる
+★ spread-spread-spread, 名 散布、広大さ
+▶ The news is spreading.
+ニュースは広まっている。
+0228
+depend
+[dɪˈpend]
+当てにする <on 〜を> 、次第である <on 〜>
+★ 形 dependent 頼っている
+▶ depend on one's parents' support
+両親の助けを当てにする
+0229
+argue
+[ˈɑːrgjuː]
+と主張する、(を) 議論する <with 〜と>
+★ 名 argument 論争、議論、主張
+▶ argue that tax should be reduced
+減税すべきだと主張する
+0230
+accept
+[əkˈsept]
+に応じる、を受け取る (⇔ refuse, reject, decline)
+★ 形 acceptable 受け入れられる
+▶ accept his invitation
+彼の招待に応じる
+0231
+disappoint
+[ˌdɪsəˈpɔɪnt]
+を失望させる、(受身形で) がっかりする <to do 〜して>
+★ 名 disappointment 失望
+▶ Don't disappoint me.
+私を失望させないで。
+0232
+edit
+[ˈedɪt]
+(原稿など) を編集する
+★ 名 editor 編集長、編集者, 名 edition (刊行物の) 版
+▶ edit a long speech
+長いスピーチを編集する
+0233
+complete
+[kəmˈpliːt]
+を完成させる、を仕上げる
+★ 形 完成した、完全な、全くの
+▶ complete a project
+プロジェクトを完成させる
+0234
+control
+[kənˈtroʊl]
+を抑制する、を支配する
+★ 名 抑制、支配
+▶ control one's emotions
+感情を抑制する
+0235
+rise
+[raɪz]
+上昇する (⇔ descend) 、増す (⇔ fall)
+★ rise-rose-risen, 名 上昇、増大
+▶ The sun rises in the east.
+太陽は東から昇る。
+0236
+feed
+[fiːd]
+に食べ物 [エサ] を与える
+★ feed-fed-fed, 名 エサ、(材料などの) 供給装置
+▶ feed one's baby
+赤ん坊に食事を与える
+0237
+point
+[pɔɪnt]
+指し示す <to 〜の方を、at 〜を> 、(物・武器など) を向ける <at 〜に>
+★ 名 論点、目的、時点
+▶ point to the door
+ドアの方を指し示す
+名詞
+0238
+condition
+[kənˈdɪʃn]
+状態、状況、条件
+★ 形 conditional 条件付きの
+▶ be in good condition
+良い状態である
+0239
+sense
+[sens]
+感覚、思慮、分別、意味
+★ 動 に気づく, 形 sensitive 敏感な, 形 sensible 良識がある
+▶ sense of sight
+視覚
+0240
+decision
+[dɪˈsɪʒn]
+決定、決心
+★ 動 decide を決定 [決心] する、決定する <on 〜を>
+▶ a government's decision
+政府の決定
+0241
+goods
+[gʊdz]
+品物
+★ good という名詞の複数形ではないので注意
+▶ donate unused goods
+未使用の品を寄付する
+0242
+cell
+[sel]
+細胞、(独) 房
+▶ brain cells
+脳細胞
+0243
+fee
+[fiː]
+料金、(専門職への) 報酬
+▶ the fee for translating the document
+書類を翻訳するための料金
+0244
+head
+[hed]
+責任者、頭
+▶ the head of the organization
+組織の責任者
+0245
+success
+[səkˈses]
+成功 (⇔ failure)
+★ 動 succeed 成功する, 形 successful 成功した
+▶ have a great success
+大成功を収める
+0246
+opportunity
+[ˌɑːpərˈtuːnəti]
+機会 <for 〜の> [≒ chance]
+▶ equal opportunity
+機会均等
+0247
+movement
+[ˈmuːvmənt]
+(政治・ sociais) 運動、動き、動向
+★ 動 move 動く、を動かす
+▶ a political movement
+政治運動
+0248
+clothing
+[ˈkloʊðɪŋ]
+(集合的に) 衣類
+★ clothes よりもやや格式ばった語
+▶ warm clothing
+暖かい衣類
+0249
+instance
+[ˈɪnstəns]
+例
+▶ give a few instances
+いくつかの例を挙げる
+0250
+concern
+[kənˈsɜːrn]
+関心事、心配
+★ 動 に関心事、(受身形で) 関心を持っている、心配している
+▶ one's main concern
+主な関心事
+0251
+economy
+[ɪˈkɑː(ː)nəmi]
+経済、節約
+★ 形 economic 経済の, 形 economical 経済的な
+▶ The economy is growing.
+経済は成長を続けている。
+0252
+guest
+[gest]
+訪問客 (⇔ host) 、(ホテル・レストランなどの) 客
+▶ an unexpected guest
+予期せぬ訪問客
+0253
+rest
+[rest]
+(the 〜) 残り、そのほかのもの
+★ rest 「休息」は同音同綴の異義語
+▶ the rest of one's life
+余生
+0254
+income
+[ˈɪnkʌm]
+収入
+▶ within a fixed income
+固定収入内で
+0255
+transportation
+[ˌtrænspərˈteɪʃn]
+輸送 [交通] (機関)
+★ 動 transport を輸送する
+▶ improve transportation in the city
+市内の交通機関を改善する
+0256
+communication
+[kəˌmjuːnɪˈkeɪʃn]
+意思の疎通、コミュニケーション
+★ 動 communicate 意思疎通する
+▶ ways of communication
+コミュニケーション手段
+0257
+coast
+[koʊst]
+海岸、沿岸
+★ 形 coastal 沿岸の
+▶ drive along the coast
+海岸沿いをドライブする
+0258
+advantage
+[ədˈvæntɪdʒ]
+利点、有利な点 (⇔ disadvantage)
+★ 形 advantageous 有利な
+▶ the advantage of this method
+この方法の利点
+0259
+effort
+[ˈefərt]
+努力、取り組み
+▶ make an effort
+努力する
+0260
+period
+[ˈpɪəriəd]
+期間、時代、終止符
+▶ a long period of time
+長期間
+0261
+license
+[ˈlaɪsns]
+免許証、(公的機関の) 許可
+★ 動 に免許を与える, 形 licensed 許可された
+▶ a driver's license
+運転免許証
+0262
+invention
+[ɪnˈvenʃn]
+発明
+★ 動 invent を発明する, 名 inventor 発明者
+▶ the invention of the computer
+コンピューターの発明
+0263
+laptop
+[ˈlæptɑː(ː)p]
+ノートパソコン、ラップトップ型コンピューター
+★ lap 「膝の上」+ top 「上部」
+▶ a portable laptop
+携帯用ノートパソコン
+0264
+agency
+[ˈeɪdʒənsi]
+代理店
+★ 名 agent 仲介者、代理人
+▶ a travel agency
+旅行代理店
+0265
+evidence
+[ˈevɪdəns]
+証拠
+★ 形 evident 明らかな
+▶ There is no clear evidence.
+はっきりした証拠はない。
+0266
+neighborhood
+[ˈneɪbərhʊd]
+近所、(集合的に) 近所の人々
+★ 名 neighbor 隣人
+▶ in one's neighborhood
+近所で
+0267
+appointment
+[əˈpɔɪntmənt]
+(会う) 約束、(病院などの) 予約
+★ ホテル・レストランの予約は reservation
+▶ have an appointment with one's client
+顧客と会う約束がある
+0268
+measure
+[ˈmeʒər]
+(しばしば 〜s) 措置、基準
+★ 動 を測る
+▶ safety measures
+安全措置
+0269
+temperature
+[ˈtempərətʃər]
+温度、気温
+▶ at room temperature
+室温で
+0270
+salary
+[ˈsæləri]
+給料
+▶ a high salary
+高給
+0271
+creature
+[ˈkriːtʃər]
+生き物
+★ 動 create (を) つくり出す
+▶ wild creatures
+野生の生物
+0272
+direction
+[dəˈrekʃn]
+(通例 〜s) (行き方などの) 指示、方向
+★ 動 direct を指揮する、を向ける
+▶ ask for directions to the hotel
+ホテルへの行き方を尋ねる
+0273
+crime
+[kraɪm]
+犯罪
+★ 名 criminal 犯罪者、犯人 形 犯罪の
+▶ recent crimes
+最近の犯罪
+0274
+deadline
+[ˈdedlaɪn]
+締切、期限
+▶ meet a deadline
+締切に間に合う
+0275
+role
+[roʊl]
+役割、役
+▶ play a big role
+大きな役割を果たす
+0276
+image
+[ˈɪmɪdʒ]
+画像、印象
+▶ a clear image
+鮮明な画像
+0277
+society
+[səˈsaɪəti]
+社会
+★ 形 social 社会の、社会的な
+▶ in modern society
+現代社会で
+0278
+climate
+[ˈklaɪmət]
+(ある地域の平均的な) 気候
+★ weather はある時点・ある地域の気象を表す
+▶ a severe climate
+厳しい気候
+0279
+survey
+[ˈsɜːrveɪ]
+調査、概観
+★ 動 [sərˈveɪ] を調査する、を概観する
+▶ carry out a survey
+調査を行う
+0280
+experiment
+[ɪkˈsperɪmənt]
+実験
+★ 動 実験をする, 形 experimental 実験 (用) の
+▶ a well-planned experiment
+うまく計画された実験
+0281
+vitamin
+[ˈvaɪtəmɪn]
+(通例 〜s) ビタミン
+▶ a vegetable rich in vitamins
+ビタミンが豊富な野菜
+形容詞
+0282
+particular
+[pərˈtɪkjələr]
+特定の [＝ unique] (⇔ general) 、詳細な
+★ 副 particularly 特に
+▶ a particular kind of tea
+ある特定の種類のお茶
+0283
+harmful
+[ˈhɑːrmfəl]
+有害な (⇔ harmless)
+★ 名 harm 害
+▶ a harmful effect
+有害な影響
+0284
+convenient
+[kənˈviːniənt]
+都合のいい、便利な (⇔ inconvenient)
+★ 名 convenience 便利、好都合
+▶ whenever it is convenient for you
+いつでもあなたの都合のいいときに
+0285
+public
+[ˈpʌblɪk]
+公の、公共の、公衆の (⇔ private)
+★ 名 (the 〜) 公衆
+▶ make a public comment
+公のコメントを出す
+0286
+medical
+[ˈmedɪkl]
+医学の
+▶ medical treatment
+医療
+0287
+original
+[əˈrɪdʒənəl]
+最初の [≒ first] (⇔ final) 、独創的な [≒ creative]
+▶ the original owner
+最初の所有者
+0288
+economic
+[ˌiːkəˈnɑ(ː)mɪk]
+経済の
+★ 形 economical 経済的な, 名 economics 経済学
+▶ economic growth
+経済成長
+0289
+nervous
+[ˈnɜːrvəs]
+心配して、神経質な
+★ 名 nerve 神経
+▶ get nervous about one's exam
+試験について心配する
+0290
+empty
+[ˈempti]
+からの
+★ 形 (⇔ full), 動 を空にする
+▶ an empty bottle
+空の瓶
+0291
+global
+[ˈgloʊbəl]
+地球全体の、全体的な
+▶ a global movement for human rights
+人権のための地球全体の運動
+0292
+frequent
+[ˈfriːkwənt]
+頻繁な (⇔ infrequent)
+★ 名 frequency 頻度 (数)
+▶ frequent questions
+頻繁な質問
+0293
+surprising
+[sərˈpraɪzɪŋ]
+驚くべき
+★ 動 surprise を驚かせる 名 驚くべきこと, 副 surprisingly 驚いたことに
+▶ a surprising fact
+驚くべき事実
+副詞
+0294
+regularly
+[ˈregjələrli]
+定期的に
+★ 形 regular 規則正しい、定期的な
+▶ exercise regularly
+定期的に運動する
+0295
+lately
+[ˈleɪtli]
+近ごろ、最近
+▶ It has not rained lately.
+近ごろ雨が降っていない。
+0296
+immediately
+[ɪˈmiːdiətli]
+直ちに [≒ right away, at once] 、直接に
+★ 形 immediate 即座の、直接の
+▶ leave immediately
+すぐに出発する
+0297
+furthermore
+[ˌfɜːrðərˈmɔːr]
+その上、さらに
+▶ It was cold. Furthermore, it became very windy.
+寒かった。その上、とても風が強くなった。
+0298
+unfortunately
+[ʌnˈfɔːrtʃənətli]
+不運にも (⇔ fortunately)
+★ 形 unfortunate 不運な
+▶ Unfortunately, she lost her passport.
+不運にも、彼女はパスポートをなくした。
+0299
+downtown
+[ˌdaʊnˈtaʊn]
+町の中心部へ [で] 、ビジネス街へ [で]
+★ 名 町の中心部、ビジネス街, 形 町の中心部の、ビジネス街の
+▶ go downtown
+町の中心部へ出かける
+前置詞
+0300
+despite
+[dɪˈspaɪt]
+〜にもかかわらず
+▶ despite a lack of experience
+経験がないにもかかわらず
+301～
+動詞
+0301
+complain
+[kəmˈpleɪn]
+不平を言う <about, of 〜について>
+★ 名 complaint 不平、苦情
+▶ complain about everything
+あらゆることに不平を言う
+0302
+decorate
+[ˈdekəreɪt]
+を飾る <with 〜で>
+★ 名 decoration 装飾 (品)
+▶ decorate a cake with strawberries
+イチゴでケーキを飾る
+0303
+preserve
+[prɪˈzɜːrv]
+を保存する
+★ 名 preservation 保存
+▶ preserve cultures
+文化を保存する
+0304
+inform
+[ɪnˈfɔːrm]
+に通知する <about, of 〜について>
+★ 名 information 通知、情報
+▶ inform you about the change
+変更についてあなたに知らせる
+0305
+discuss
+[dɪˈskʌs]
+について議論する <with 〜と>
+★ 名 discussion 議論
+▶ discuss the matter with him
+彼とその件について議論する
+0306
+upset
+[ʌpˈset]
+を動揺させる、をひっくり返す
+★ upset-upset-upset, 名 [ˈʌpset] 混乱、動転、不調
+▶ be upset about the news
+知らせに動揺する
+0307
+destroy
+[dɪˈstrɔɪ]
+を破壊する (⇔ construct) 、を台無しにする
+★ 名 destruction 破壊, 形 destructive 破壊的な
+▶ destroy a building
+建物を壊す
+0308
+promote
+[prəˈmoʊt]
+を促進する、を昇進させる <to 〜に> (⇔ demote)
+★ 名 promotion 昇進、宣伝
+▶ ways to promote health
+健康を促進する方法
+0309
+concentrate
+[ˈkɑː(ː)nsəntreɪt]
+集中する <on, upon 〜に>
+★ 名 concentration 集中
+▶ concentrate on the book
+本に集中する
+0310
+estimate
+[ˈestɪmeɪt]
+を見積もる、を評価する
+★ 名 [ˈestɪmət] 見積もり、評価
+▶ estimate the cost
+費用を見積もる
+0311
+suppose
+[səˈpoʊz]
+(be supposed to do で) 〜することになっている
+▶ I was supposed to be home by ten.
+私は10時までに家に帰ることになっていた (ができなかった) 。
+0312
+request
+[rɪˈkwest]
+に頼む <to do 〜するよう> 、を要請する
+★ 名 依頼、要望
+▶ request hotel guests not to smoke
+たばこを吸わないようホテルの宿泊客に頼む
+0313
+advertise
+[ˈædvərtaɪz]
+を宣伝 [広告] する
+★ 名 advertisement 宣伝、広告, 名 advertising 広告 (業)
+▶ advertise a festival
+祭りを宣伝する
+0314
+marry
+[ˈmæri]
+と結婚する [≒ get married to]
+★ 名 marriage 結婚
+▶ She married him.
+彼女は彼と結婚した。
+0315
+separate
+[ˈsepəreɪt]
+を離す <from 〜から> (⇔ combine, connect)
+★ 形 [ˈsepərət] 離れた, 名 separation 分離
+▶ separate religion from politics
+宗教を政治から分離する
+0316
+search
+[sɜːrtʃ]
+(を) 捜す <for 〜を求めて>
+★ 名 捜索、(コンピューターの) 検索
+▶ search one's pocket for some change
+小銭がないかポケットの中を捜す
+0317
+click
+[klɪk]
+をクリックする
+★ 名 クリック
+▶ click a button
+ボタンをクリックする
+0318
+release
+[rɪˈliːs]
+を放つ、を解放する
+★ 名 釈放、発表
+▶ release a fish back into the river
+魚を川に再び放す
+0319
+apply
+[əˈplaɪ]
+申し込む <for (仕事など) を、to (人・組織) に> 、を応用 [適用] する <to 〜に>
+★ 名 application 申し込み, 名 applicant 志願者
+▶ apply to a college
+大学に出願する
+0320
+pack
+[pæk]
+を詰める <in, into 〜に> 、(を) 荷造りする
+★ 名 包み
+▶ pack clothes into a suitcase
+スーツケースに衣服を詰める
+0321
+fit
+[fɪt]
+に適合する、を収める [≒ adjust]
+★ 形 適した、ふさわしい
+▶ fit the windows
+窓の寸法に合う
+0322
+recognize
+[ˈrekəgnaɪz]
+を見分ける、を認める
+★ 名 recognition 承認、認識
+▶ recognize the man as my old teacher
+その男性が私の昔の先生だとわかる
+0323
+delay
+[dɪˈleɪ]
+を遅らせる、を延期する
+★ 名 遅延、延期
+▶ be delayed because of the heavy snow
+大雪のせいで遅延する
+0324
+transport
+[trænˈspɔːrt]
+を輸送する
+★ 名 transportation 輸送 [交通] (機関)
+▶ transport goods by ship
+船で品物を輸送する
+0325
+respect
+[rɪˈspekt]
+を尊敬する [≒ look up to] (⇔ look down on) 、を尊重する
+★ 名 尊敬、尊重
+▶ respect an artist
+芸術家を尊敬する
+0326
+celebrate
+[ˈseləbreɪt]
+(を) 祝う
+★ 名 celebration 祝賀 (会)
+▶ celebrate the New Year
+新年を祝う
+0327
+connect
+[kəˈnekt]
+をつなぐ <to, with 〜と> (⇔ separate) 、を関係させる
+▶ connect a computer to a printer
+コンピューターをプリンターと接続する
+0328
+gather
+[ˈgæðər]
+を集める、集まる
+★ 名 gathering 集まり
+▶ gather information
+情報を収集する
+0329
+hand
+[hænd]
+(物) を手渡す
+★ 名 手、手助け
+▶ hand a report to the teacher
+先生にレポートを手渡す
+0330
+compare
+[kəmˈpeər]
+を比較する <with, to 〜と> 、を例える <to, with 〜に>
+★ 名 comparison 比較
+▶ compare prices
+値段を比較する
+0331
+appreciate
+[əˈpriːʃieɪt]
+を感謝する、を正しく評価する
+★ 名 appreciation 評価、感謝, 形 appreciative 感謝している
+▶ appreciate his help
+彼の助けに感謝する
+0332
+stick
+[stɪk]
+くっつく <to 〜に> 、をくっつける
+★ stick-stuck-stuck, 名 sticker ステッカー
+▶ My wet shirt stuck to my skin.
+濡れたシャツが肌にくっついた。
+0333
+adopt
+[əˈdɑːpt]
+を採用する、を養子にする
+★ 名 adoption 採用、養子縁組
+▶ adopt a new approach
+新しい取り組みを採用する
+名詞
+0334
+source
+[sɔːrs]
+源、原因
+▶ a source of pollution
+汚染源
+0335
+trend
+[trend]
+傾向、動向、流行
+★ 動 傾く <toward 〜に>
+▶ explain economic trends
+経済動向を説明する
+0336
+reservation
+[ˌrezərˈveɪʃn]
+(座席・部屋などの) 予約
+★ 動 reserve を予約する
+▶ make a reservation at a restaurant
+レストランの予約をする
+0337
+detail
+[ˈdiːteɪl]
+(〜s) 詳細、細部
+★ 動 を詳しく述べる
+▶ provide details
+詳細を示す
+0338
+clerk
+[klɜːrk]
+店員、係員
+▶ a shop clerk
+店員
+0339
+issue
+[ˈɪʃuː]
+問題 (点) 、発行
+★ 動 (声明など) を出す、(書籍など) を発行する
+▶ solve international issues
+国際的な問題を解決する
+0340
+approach
+[əˈproʊtʃ]
+取り組み方、接近
+★ 動 に近づく、に接近する
+▶ the best approach to the problem
+その問題への最善の取り組み方
+0341
+majority
+[məˈdʒɔː(ː)rəti]
+大多数、大部分、多数派 (⇔ minority)
+★ 形 major 主要な
+▶ the majority of Japanese people
+日本人の大多数
+0342
+location
+[loʊˈkeɪʃn]
+場所、位置 <for, of 〜の>
+★ 動 locate の所在を見つける
+▶ a good location for surfing
+サーフィンに好適の場所
+0343
+relationship
+[rɪˈleɪʃnʃɪp]
+関係、間柄 <between 〜の間の、with 〜との>
+★ 名 relation 関係
+▶ the relationship between culture and society
+文化と社会との関係
+0344
+equipment
+[ɪˈkwɪpmənt]
+(集合的に) 用具、設備
+★ 動 equip に装備する <with 〜を>
+▶ a piece of camping equipment
+キャンプ用具1点
+0345
+battery
+[ˈbætəri]
+電池、バッテリー
+▶ charge the battery
+電池を充電する
+0346
+object
+[ˈɑː(ː)bdʒekt]
+物、対象、目的
+★ 動 [əbˈdʒekt] 反対する <to 〜に>, 名 objection 反対
+▶ examine the object
+その物体を調べる
+0347
+software
+[ˈsɔː(ː)ftweər]
+ソフトウェア
+▶ develop computer software
+コンピューターソフトウェアを開発する
+0348
+air conditioner
+[ˈeər kənˌdɪʃənər]
+冷暖房装置、エアコン
+▶ turn off the air conditioner
+エアコンを消す
+0349
+engine
+[ˈendʒɪn]
+エンジン
+▶ a car engine
+車のエンジン
+0350
+officer
+[ˈɑː(ː)fəsər]
+警察官、巡査、公務員、将校
+▶ a police officer
+警察官
+0351
+conversation
+[ˌkɑː(ː)nvərˈseɪʃn]
+会話
+▶ have a conversation with one's boss
+上司と会話をする
+0352
+blanket
+[ˈblæŋkɪt]
+毛布
+▶ put a warm blanket on her
+彼女に暖かい毛布を掛ける
+0353
+global warming
+[ˌgloʊbəl ˈwɔːrmɪŋ]
+地球温暖化
+▶ prevent global warming
+地球温暖化を防ぐ
+0354
+law
+[lɔː]
+法律、法
+▶ break [violate] the law
+法律に違反する
+0355
+disease
+[dɪˈziːz]
+病気
+▶ suffer from a skin disease
+皮膚病を患っている
+0356
+knowledge
+[ˈnɑː(ː)lɪdʒ]
+知識 <about, of 〜についての> (⇔ ignorance)
+▶ have knowledge about sea creatures
+海の生物についての知識がある
+0357
+discovery
+[dɪˈskʌvəri]
+発見
+★ 動 discover を発見する
+▶ make a scientific discovery
+科学的な発見をする
+0358
+challenge
+[ˈtʃælɪndʒ]
+難題
+★ 形 challenging やりがいのある、難しい
+▶ overcome a challenge
+難題を乗り越える
+0359
+muscle
+[ˈmʌsl]
+筋肉
+▶ muscles in one's arms
+腕の筋肉
+0360
+ingredient
+[ɪnˈgriːdiənt]
+材料、成分、要素
+▶ ingredients of a cake
+ケーキの材料
+0361
+agent
+[ˈeɪdʒənt]
+仲介者、代理人
+★ 名 agency 代理店
+▶ a real-estate agent
+不動産仲介人
+0362
+fear
+[fɪər]
+恐れ、不安
+▶ overcome fear
+恐れを克服する
+0363
+fashion
+[ˈfæʃn]
+流行、ファッション、方法
+★ 形 fashionable 流行の
+▶ this year's fashion
+今年の流行
+0364
+balance
+[ˈbæləns]
+つり合い、バランス
+★ 動 (の) バランスをとる
+▶ a balance between work and leisure
+仕事と余暇の間のバランス
+0365
+instructor
+[ɪnˈstrʌktər]
+教官、インストラクター
+★ 動 instruct に指示する, 名 instruction (〜s) 指示、使用説明書
+▶ one's favorite instructor
+お気に入りの教官
+0366
+development
+[dɪˈveləpmənt]
+発達、発展、開発
+★ 動 develop を開発する、発達する
+▶ with the development of technology
+科学技術の発達で
+0367
+technique
+[tekˈniːk]
+(専門的) 技術、技巧、手法
+★ 形 technical 技術的な
+▶ learn the latest techniques
+最新技術を身につける
+0368
+director
+[dəˈrektər]
+映画監督、指導者、重役
+▶ a movie director from Paris
+パリから来た映画監督
+0369
+exhibition
+[ˌeksɪˈbɪʃn]
+展覧 (会) 、展示 (会)
+★ 動 exhibit を展示品 動 を展示する
+▶ hold an exhibition
+展覧会を催す
+0370
+region
+[ˈriːdʒən]
+地域、地方
+★ 形 regional 地方の、局地的な
+▶ a coastal region
+沿岸地域
+0371
+facility
+[fəˈsɪləti]
+施設、設備
+▶ public facilities
+公共施設
+0372
+aim
+[eɪm]
+狙い、目標
+★ 動 の狙いを定める <at 〜に>
+▶ the aim of the class
+その授業の狙い
+0373
+assignment
+[əˈsaɪnmənt]
+課題、割り当て
+★ 動 assign を割り当てる
+▶ complete an assignment
+課題を仕上げる
+0374
+trail
+[treɪl]
+(山中の) 小道
+▶ follow a mountain trail
+山道をたどる
+0375
+scene
+[siːn]
+現場、風景、場面
+★ 形 scenic 景色の良い
+▶ at the scene of the crime
+犯行現場で
+0376
+pressure
+[ˈpreʃər]
+圧力、重圧
+★ 動 (人) に圧力をかける <into, to do 〜するよう>
+▶ tire pressure
+タイヤの空気圧
+0377
+response
+[rɪˈspɑːns]
+応答、反応
+★ 動 respond 答える、反応する <to 〜に>
+▶ in response to his request
+彼の要望に応えて
+0378
+vehicle
+[ˈviːəkl]
+乗り物
+▶ a vehicle with extra large tires
+特大のタイヤがついた乗り物
+0379
+skin
+[skɪn]
+肌、皮膚
+▶ protect one's skin from the sun
+日ざしから肌を守る
+0380
+fossil
+[ˈfɑː(ː)səl]
+化石
+★ 形 化石の (ような)
+▶ hunt for fossils
+化石を探す
+形容詞
+0381
+electric
+[ɪˈlektrɪk]
+電気の
+★ 名 electricity 電気、電力, 形 electronic 電子の
+▶ electric appliances
+電化製品
+0382
+current
+[ˈkɜːrənt]
+現在の、流通している
+★ 名 流れ、風潮
+▶ current social problems
+現在の社会問題
+0383
+environmental
+[ɪnˌvaɪərənˈmentl]
+環境の
+★ 名 environment 環境
+▶ an environmental issue
+環境問題
+0384
+rare
+[reər]
+珍しい、まれな (⇔ common)
+★ 副 rarely めったに〜ない
+▶ find a rare bird
+珍しい鳥を見つける
+0385
+efficient
+[ɪˈfɪʃnt]
+能率的な
+★ 名 efficiency 能率, 副 efficiently 能率的に
+▶ an efficient way of studying
+能率的な勉強法
+0386
+personal
+[ˈpɜːrsənəl]
+個人の (⇔ public)
+▶ personal reasons
+個人的な理由
+0387
+confident
+[ˈkɑː(ː)nfɪdənt]
+確信して <of 〜を> 、自信のある
+★ 名 confidence 自信
+▶ be confident of winning
+勝利を確信している
+0388
+past
+[pæst]
+過去の
+★ 名 (the 〜) 過去
+▶ in the past few years
+過去数年間で [に]
+0389
+solar
+[ˈsoʊlər]
+太陽の
+▶ the solar system
+太陽系
+0390
+official
+[əˈfɪʃəl]
+公式の
+★ 名 公務員、職員, 副 officially 公式に
+▶ an official meeting
+公式の会議
+0391
+valuable
+[ˈvæljuəbl]
+高価な、有益な (⇔ useless)
+★ 名 (〜s) 貴重品, 名 value 価値
+▶ valuable metals
+高価な金属
+0392
+casual
+[ˈkæʒuəl]
+(衣服が) カジュアルな、略式の (⇔ formal)
+▶ casual clothes
+カジュアルな服装、普段着
+0393
+negative
+[ˈnegətɪv]
+好ましくない、消極的な (⇔ positive) 、否定の (⇔ affirmative)
+★ 副 negatively 否定的に、消極的に
+▶ a negative effect
+好ましくない影響
+0394
+major
+[ˈmeɪdʒər]
+主要な、重大な (⇔ minor)
+★ 動 (major in 〜で) を専攻する
+▶ a major problem
+主要な問題
+0395
+classic
+[ˈklæsɪk]
+(文学・芸術などが) 最高水準の、典型的な [≒ typical]
+★ 形 classical 古典的な
+▶ a classic work
+最高水準の作品
+副詞
+0396
+especially
+[ɪˈspeʃəli]
+特に
+▶ be made especially for you
+特にあなたのために作られた
+0397
+directly
+[dəˈrektli]
+直接に (⇔ indirectly)
+★ 形 direct 直接の、まっすぐな
+▶ come directly from India
+インドから直接来る
+0398
+frequently
+[ˈfriːkwəntli]
+頻繁に
+★ 形 frequent 頻繁な
+▶ frequently drive along the coast
+頻繁に海岸沿いをドライブする
+0399
+environmentally
+[ɪnˌvaɪərənˈmentəli]
+環境 (保護) の点で
+★ 名 environment 環境, 形 environmental 環境の
+▶ be environmentally friendly
+環境に優しい
+0400
+eventually
+[ɪˈventʃuəli]
+結局 (は) 、とうとう
+★ 形 eventual 結果として起こる
+▶ Eventually, the team lost the game.
+結局、チームは試合に負けてしまった。
+代名詞
+0401
+consume
+[kənˈsuːm]
+を消費する
+★ 名 consumption 消費
+▶ consume a lot of energy
+多くのエネルギーを消費する
+0402
+count
+[kaʊnt]
+(を) 数える、重要である [≒ matter]
+★ 名 計算、勘定
+▶ count the change
+お釣りを数える
+0403
+remind
+[rɪˈmaɪnd]
+に思い出させる <of 〜を>
+▶ a book that reminds me of the past
+私に昔を思い出させる本
+0404
+warn
+[wɔːrn]
+(に) 警告する <to do 〜するように、about 〜を>
+★ 名 warning 警告
+▶ warn people not to go in the river
+その川に入らないよう人々に警告する
+0405
+rely
+[rɪˈlaɪ]
+頼る <on, upon 〜を>
+★ 名 reliance 信頼
+▶ rely on one's friends
+友人を頼る
+0406
+respond
+[rɪˈspɑː(ː)nd]
+答える、反応する <to 〜に>
+★ 名 response 応答、反応
+▶ respond to the teacher's question
+先生の質問に答える
+0407
+refer
+[rɪˈfɜːr]
+参照する <to 〜を> 、言及する <to 〜に>
+★ 名 reference 言及、参照、照会
+▶ refer to a dictionary
+辞書を参照する
+0408
+behave
+[bɪˈheɪv]
+振る舞う、行儀良くする
+★ 名 behavior 行動、態度
+▶ behave well
+行儀良く振る舞う
+0409
+scare
+[skeər]
+をおびえさせる
+★ 名 恐怖, 形 scared おびえた
+▶ be scared at the big noise
+大きな音におびえる
+0410
+disturb
+[dɪˈstɜːrb]
+の邪魔をする、に迷惑をかける
+★ 名 disturbance 妨害
+▶ disturb the conversation
+会話の邪魔をする
+0411
+cover
+[ˈkʌvər]
+(話題など) を扱う [≒ deal with] 、を覆う
+★ 名 覆い、カバー
+▶ cover various topics
+さまざまな話題を扱う
+0412
+reserve
+[rɪˈzɜːrv]
+(座席・部屋など) を予約する [≒ book] 、を取っておく
+★ 名 reservation 予約
+▶ reserve a table
+席を予約する
+0413
+deliver
+[dɪˈlɪvər]
+を配達する <to 〜に>
+★ 名 delivery 配達
+▶ deliver the goods to the head office
+本社に商品を配達する
+0414
+trust
+[trʌst]
+を信頼する (⇔ distrust)
+★ 名 信頼、信用
+▶ trust information
+情報を信頼する
+0415
+upgrade
+[ʌpˈgreɪd]
+(の) 質を高める、(を) アップグレードする
+★ 名 [ˈʌpgreɪd] アップグレード
+▶ upgrade to the latest version
+最新版にアップグレードする
+0416
+roll
+[roʊl]
+を巻く、を転がす、転がる、回る
+★ 名 巻いたもの
+▶ roll up a carpet
+カーペットを巻く
+0417
+surf
+[sɜːrf]
+(ウェブサイトなど) を見て回る、サーフィンをする
+★ 名 surfing サーフィン、ネットサーフィン
+▶ surf the Internet
+ネットサーフィンをする
+0418
+beat
+[biːt]
+鼓動する、打つ、を打ち負かす
+★ beat-beat-beaten, 名 鼓動、拍子
+▶ My heart beats fast.
+心臓が速く鼓動する。
+0419
+lay
+[leɪ]
+(卵) を産む、を置く、を横たえる
+★ lay-laid-laid
+▶ lay eggs in a nest
+巣で卵を産む
+0420
+register
+[ˈredʒɪstər]
+(を) 登録する
+★ 名 registration 登録, 形 registered 登録された
+▶ register a company name
+会社名を登録する
+0421
+expand
+[ɪkˈspænd]
+(を) 拡大 [拡張] する、を膨張させる
+★ 名 expansion 拡大、膨張
+▶ expand a sports center
+スポーツセンターを拡張する
+0422
+cure
+[kjʊər]
+(患者・病気) を治す、(問題など) を解決する
+★ 名 治療、治療法
+▶ cure a disease
+病気を治す
+0423
+rush
+[rʌʃ]
+急いで行く、を急がせる
+★ 名 急ぐこと、混雑時
+▶ rush home from work
+仕事から大急ぎで帰宅する
+0424
+scan
+[skæn]
+をスキャンする、を注意深く調べる、をざっと見る
+★ 名 スキャン、精密検査
+▶ scan the brain
+脳をスキャンする
+名詞
+0425
+promotion
+[prəˈmoʊʃn]
+昇進、宣伝
+★ 動 promote を促進する、を昇進させる
+▶ get a promotion
+昇進する
+0426
+improvement
+[ɪmˈpruːvmənt]
+改善、進歩、向上
+★ 動 improve を進歩 [向上] させる、良くなる
+▶ make improvements to a house
+家を改修する
+0427
+degree
+[dɪˈgriː]
+学位、程度、(温度や角度などの) 度
+▶ a bachelor's degree in economics
+経済学の学士号
+0428
+instruction
+[ɪnˈstrʌkʃn]
+(〜s) 指示、使用説明書
+★ 動 instruct (〜s) に指示する
+▶ follow instructions
+指示に従う
+0429
+countryside
+[ˈkʌntrisaɪd]
+田舎
+▶ live in the countryside
+田舎に住む
+0430
+brand
+[brænd]
+ブランド、銘柄
+▶ a store brand
+自社ブランド
+0431
+privacy
+[ˈpraɪvəsi]
+プライバシー、私生活
+▶ the protection of privacy
+プライバシー保護
+0432
+healthcare
+[ˈhelθkeər]
+医療、健康管理
+▶ healthcare workers
+医療従事者
+0433
+term
+[tɜːrm]
+期間、学期、専門用語
+▶ a term of the contract
+契約期間
+0434
+clinic
+[ˈklɪnɪk]
+診療所、クリニック
+★ 形 clinical 臨床の
+▶ a dental clinic
+歯科診療所
+0435
+safety
+[ˈseɪfti]
+安全 (性)
+★ 形 safe 安全な, 副 safely 安全に
+▶ worry about one's safety
+安全性を心配する
+0436
+blood
+[blʌd]
+血、血液
+★ 動 bleed 出血する
+▶ high blood pressure
+高血圧
+0437
+tourism
+[ˈtʊərɪzəm]
+観光事業、観光旅行
+★ 名 tour 見学、(周遊) 旅行, 名 tourist 観光客
+▶ promote tourism
+観光事業を促進する
+0438
+construction
+[kənˈstrʌkʃn]
+建設 (工事) (⇔ destruction) 、建造物
+★ 動 construct を建設する
+▶ under construction
+建設中で
+0439
+temple
+[ˈtempl]
+寺院、神殿
+▶ build a temple
+寺院を建てる
+0440
+demand
+[dɪˈmænd]
+需要 <for 〜の> (⇔ supply) 、要求
+★ 動 を強く要求する <from, of 〜に>
+▶ the demand for teachers
+教師の需要
+0441
+crop
+[krɑː(ː)p]
+作物、収穫高
+★ 動 を短く刈る、を収穫する
+▶ grow crops in a vast field
+広大な畑で作物を育てる
+0442
+campaign
+[kæmˈpeɪn]
+( sociais・政治的・商業的な) 組織的活動 [運動] 、キャンペーン
+★ 動 (選挙などの) 運動をする
+▶ a sales campaign
+販売促進運動
+0443
+conference
+[ˈkɑː(ː)nfərəns]
+(公式の) 会議、総会
+▶ an international conference
+国際会議
+0444
+poison
+[ˈpɔɪzən]
+毒
+★ 形 poisonous 有毒な
+▶ use a strong poison
+強力な毒を使う
+0445
+chemistry
+[ˈkemɪstri]
+化学
+▶ study chemistry at college
+大学で化学を勉強する
+0446
+delivery
+[dɪˈlɪvəri]
+配達
+★ 動 deliver を配達する
+▶ offer free delivery
+無料配達を提供する
+0447
+slum
+[slʌm]
+(〜s) スラム街
+▶ urban slums
+都会のスラム街
+0448
+panel
+[ˈpænl]
+パネル、羽目板
+▶ solar panels
+ソーラーパネル、太陽電池板
+0449
+flavor
+[ˈfleɪvər]
+香味料、風味
+★ 動 (食べ物など) に味を添える
+▶ artificial flavors
+人工香味料
+0450
+surface
+[ˈsɜːrfəs]
+表面、(the 〜) 外見
+★ 動 表面化する、現れる, 形 表面の、外見だけの
+▶ the surface of the sea
+海面
+0451
+death
+[deθ]
+死 (⇔ life, birth)
+★ 動 die 死ぬ, 形 dead 死んだ
+▶ after death
+死後
+0452
+carbon dioxide
+[ˌkɑːrbən daɪˈɑː(ː)ksaɪd]
+二酸化炭素
+▶ release carbon dioxide
+二酸化炭素を放出する
+0453
+bone
+[boʊn]
+骨
+▶ broken bones
+折れた骨
+0454
+average
+[ˈævərɪdʒ]
+平均
+★ 動 を平均する, 形 平均の
+▶ the national average
+全国平均
+0455
+gallery
+[ˈgæləri]
+美術館、画廊
+▶ an art gallery
+美術館
+0456
+credit card
+[ˈkredɪt kɑːrd]
+クレジットカード
+★ credit は「信用、名声」を意味する名詞
+▶ pay by credit card
+クレジットカードで支払う
+0457
+board
+[bɔːrd]
+委員会、板
+★ 動 (列車・飛行機など) に乗り込む
+▶ the board of education
+教育委員会
+0458
+valley
+[ˈvæli]
+谷、流域
+▶ a deep valley
+深い谷
+0459
+decade
+[ˈdekeɪd]
+10年間
+▶ the two decades from 2000 to 2020
+2000年から2020年までの20年間
+0460
+recommendation
+[ˌrekəmenˈdeɪʃn]
+推薦、推薦状
+★ 動 recommend を推薦する
+▶ write a letter of recommendation
+推薦状を書く
+0461
+organ
+[ˈɔːrgən]
+臓器、器官
+▶ an artificial organ
+人工臓器
+0462
+policy
+[ˈpɑː(ː)ləsi]
+政策、方針
+▶ a foreign policy
+外交政策
+0463
+sample
+[ˈsæmpl]
+見本、サンプル、試供品
+▶ try a free sample
+無料の試供品を試す
+0464
+custom
+[ˈkʌstəm]
+慣習、習慣
+▶ a traditional custom
+伝統的な慣習
+0465
+contract
+[ˈkɑː(ː)ntrækt]
+契約 (書) 、協定
+★ 動 [kənˈtrækt] (協定など) を結ぶ <with 〜と>
+▶ sign a contract
+契約書にサインする
+0466
+standard
+[ˈstændərd]
+(しばしば 〜s) 基準、標準、規範
+★ 形 標準の
+▶ safety standards
+安全基準
+0467
+relative
+[ˈrelətɪv]
+親類、身内
+★ 形 相対的な、比較上の, 副 relatively 比較的に
+▶ visit one's relatives
+親類を訪問する
+形容詞
+0468
+active
+[ˈæktɪv]
+活動的な
+★ 名 activity 活動, 副 actively 活動的に
+▶ lead an active life
+活動的な生活を送る
+0469
+stressful
+[ˈstresfəl]
+ストレスの多い
+★ 名 stress ストレス、圧迫感
+▶ a stressful job
+ストレスの多い仕事
+0470
+positive
+[ˈpɑː(ː)zətɪv]
+肯定的な、積極的な (⇔ negative) 、確信のある
+★ 副 positively 肯定的に
+▶ positive feedback
+肯定的な反応
+0471
+aware
+[əˈweər]
+知って、気づいて (⇔ ignorant)
+★ 名 awareness 自覚、認識
+▶ be aware of the dangers of smoking
+喫煙の危険性を知っている
+0472
+either
+[ˈiːðər]
+どちらでも、(2つのうち) どちらかの
+★ 副 (否定文で) 〜もない, 代 どちらか、どちらでも
+▶ in either case
+どちらの場合にも
+0473
+regular
+[ˈregjələr]
+規則正しい (⇔ irregular) 、定期的な
+★ 副 regularly 定期的に
+▶ at regular intervals
+規則正しい間隔で
+0474
+private
+[ˈpraɪvət]
+個人の (⇔ public) 、民間の
+▶ a private lesson
+個人授業、プライベートレッスン
+0475
+worth
+[wɜːrθ]
+値する、価値がある (⇔ worthless)
+★ 名 価値, 形 worthy 値して <of 〜に>
+▶ This book is worth reading.
+この本は読むに値する。
+0476
+flexible
+[ˈfleksəbl]
+融通の利く、柔軟な (⇔ inflexible)
+★ 名 flexibility 柔軟性, 副 flexibly 柔軟に
+▶ work flexible hours
+フレックス制で働く
+0477
+individual
+[ˌɪndɪˈvɪdʒuəl]
+個々の (⇔ collective) 、個人的な
+★ 名 個人
+▶ an individual case
+個々の事例
+0478
+electronic
+[ɪˌlekˈtrɑː(ː)nɪk]
+電子の
+▶ an electronic device
+電子機器
+0479
+violent
+[ˈvaɪələnt]
+暴力的な、乱暴な (⇔ gentle)
+★ 名 violence 暴力
+▶ a violent video game
+暴力的なテレビゲーム
+0480
+educational
+[ˌedʒəˈkeɪʃənl]
+教育的な、教育の
+★ 名 education 教育
+▶ an educational learning tool
+教育的な学習ツール
+0481
+wealthy
+[ˈwelθi]
+裕福な
+★ 名 wealth 富
+▶ a wealthy family
+裕福な家庭
+0482
+ordinary
+[ˈɔːrdəneri]
+普通の、ありふれた
+★ 副 ordinarily 普通は
+▶ in ordinary dress
+普通の服で
+0483
+physical
+[ˈfɪzɪkl]
+身体の (⇔ mental) 、物質的な (⇔ spiritual)
+★ 名 physics 物理学
+▶ physical ability
+身体能力
+0484
+attractive
+[əˈtræktɪv]
+魅力的な、人を引き付ける (⇔ unattractive)
+★ 動 attract (注意・興味など) を引く
+▶ an attractive price
+魅力的な値段
+0485
+portable
+[ˈpɔːrtəbl]
+持ち運びできる
+▶ a portable electric heater
+持ち運びできる電気ヒーター
+0486
+unlikely
+[ʌnˈlaɪkli]
+ありそうにもない (⇔ likely)
+★ 副 unlike 〜とは違って
+▶ It is unlikely to rain.
+雨は降りそうにもない。
+0487
+real-estate
+[ˈriːəl ɪˌsteɪt]
+不動産の
+★ 名 real estate 不動産、不動産業
+▶ a real-estate agency
+不動産代理店
+副詞
+0488
+traditionally
+[trəˈdɪʃənəli]
+伝統的に
+★ 名 tradition 伝統, 形 traditional 伝統的な
+▶ be traditionally held on New Year's Day
+伝統的に元旦に行われる
+0489
+further
+[ˈfɜːrðər]
+さらに、もっと遠くに [＝ farther]
+▶ investigate the case further
+その件をさらに調査する
+0490
+rapidly
+[ˈræpɪdli]
+急速に、素早く
+★ 形 rapid 急速な
+▶ a rapidly growing market
+急速に成長している市場
+0491
+properly
+[ˈprɑː(ː)pərli]
+適切に、礼儀正しく (⇔ improperly)
+★ 形 proper 適切な、礼儀正しい
+▶ be dressed properly
+適切な身なりをしている
+0492
+indeed
+[ɪnˈdiːd]
+事実として、本当に、実は [≒ in fact]
+▶ Indeed, there are many security cameras in town.
+事実として、町中に多くの監視カメラがある。
+0493
+differently
+[ˈdɪfərəntli]
+異なって (⇔ similarly) 、それとは違って
+★ 名 difference 違い, 動 differ 違う
+▶ think differently from others
+ほかの人とは違った考え方をする
+0494
+mostly
+[ˈmoʊstli]
+ほとんど、たいてい、大部分は
+▶ The assignment is mostly done.
+その課題はほとんどできている。
+0495
+completely
+[kəmˈpliːtli]
+完全に、全く
+★ 動 complete を完成させる 形 完成した
+▶ completely forget his birthday
+彼の誕生日を完全に忘れる
+0496
+gradually
+[ˈgrædʒuəli]
+徐々に
+★ 形 gradual 徐々の
+▶ gradually improve
+徐々に改善する
+0497
+dramatically
+[drəˈmætɪkli]
+劇的に
+★ 形 dramatic 劇的な
+▶ dramatically expand
+劇的に拡大する
+0498
+overtime
+[ˈoʊvərtaɪm]
+時間外に
+★ 形 時間外労働の, 名 時間外 (労働)
+▶ work overtime
+時間外に働く、残業する
+0499
+freely
+[ˈfriːli]
+自由に
+★ 形 free 自由な、暇な、無料の
+▶ speak freely
+自由に話す
+代名詞
+0500
+neither
+[ˈniːðər]
+どちらも〜ない
+★ 副 (neither A nor B で) AでもBでもない
+▶ Neither of my brothers likes tomatoes.
+私の兄弟のどちらもトマトが好きではない。
+`;
+
+        // 変更点: 新しいグループEと、新しいLocalStorageキーを追加
+        const STATUS_NOT_YET = "not_yet", STATUS_LEARNED = "learned", STATUS_PERFECT = "perfect", ALL_STATUSES = "all_statuses";
+        const GROUP_A = "A", GROUP_B = "B", GROUP_C = "C", GROUP_D = "D", GROUP_E = "E", ALL_GROUPS = "all_groups";
+        const LOCAL_STORAGE_KEY = 'flashcardUserDataV16';
+
+        const wordDisplayElement = document.getElementById('word-display');
+        const detailsDisplayElement = document.getElementById('details-display');
+        const posSpan = document.getElementById('pos-span');
+        const pronunciationSpan = document.getElementById('pronunciation-span');
+        const meaningSpan = document.getElementById('meaning-span');
+        const notesP = document.getElementById('notes-p');
+        const notesSpan = document.getElementById('notes-span');
+        const exampleEnP = document.getElementById('example-en-p');
+        const exampleEnSpan = document.getElementById('example-en-span');
+        const exampleJaP = document.getElementById('example-ja-p');
+        const exampleJaSpan = document.getElementById('example-ja-span');
+        const wordIdSpan = document.getElementById('word-id-span');
+        const flashcardArea = document.getElementById('flashcard-area');
+        const noWordsMessageElement = document.getElementById('no-words-message');
+        const flashcardElement = document.getElementById('flashcard');
+        const statusButtons = {
+            [STATUS_NOT_YET]: document.getElementById('status-btn-not-yet'),
+            [STATUS_LEARNED]: document.getElementById('status-btn-learned'),
+            [STATUS_PERFECT]: document.getElementById('status-btn-perfect')
+        };
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        const progressIndicatorElement = document.getElementById('progress-indicator');
+        const statusMessageElement = document.getElementById('status-message');
+        const settingsToggleButton = document.getElementById('settings-toggle-button');
+        const settingsDropdownMenu = document.getElementById('settings-dropdown-menu');
+        const resetDataButton = document.getElementById('reset-data-button');
+        const randomModeCheckbox = document.getElementById('random-mode-checkbox');
+        const playAudioButton = document.getElementById('play-audio-button');
+        // 変更点: グループEのボタンを取得
+        const groupFilterButtons = {
+            [ALL_GROUPS]: document.getElementById('group-filter-all'), [GROUP_A]: document.getElementById('group-filter-a'),
+            [GROUP_B]: document.getElementById('group-filter-b'), [GROUP_C]: document.getElementById('group-filter-c'),
+            [GROUP_D]: document.getElementById('group-filter-d'), [GROUP_E]: document.getElementById('group-filter-e')
+        };
+        const statusFilterButtons = {
+            [ALL_STATUSES]: document.getElementById('status-filter-all'), [STATUS_NOT_YET]: document.getElementById('status-filter-not-yet'),
+            [STATUS_LEARNED]: document.getElementById('status-filter-learned'), [STATUS_PERFECT]: document.getElementById('status-filter-perfect')
+        };
+        const seekBar = document.getElementById('seek-bar');
+        
+        let allWordData = [];
+        let currentFilteredAndShuffledWords = [];
+        let currentWordIndexInList = 0;
+        let showingMeaning = false;
+        let currentGroupFilter = ALL_GROUPS;
+        let currentStatusFilter = ALL_STATUSES;
+        let isRandomMode = false;
+        
+        const synth = window.speechSynthesis;
+        let voices = [];
+
+        function populateVoiceList() {
+            if(typeof speechSynthesis === 'undefined') {
+                if (playAudioButton) playAudioButton.style.display = 'none'; return;
+            }
+            voices = synth.getVoices();
+            if (voices.length === 0 && synth.onvoiceschanged !== undefined) {
+                synth.onvoiceschanged = populateVoiceList;
+            }
+            if (playAudioButton) {
+                 playAudioButton.style.display = (voices.length > 0 && !showingMeaning && currentFilteredAndShuffledWords.length > 0) ? 'block' : 'none';
+            }
+        }
+        populateVoiceList();
+       
+        function parseWordData(textData) {
+            const words = [];
+            const lines = textData.trim().split(/\r\n|\r|\n/);
+            let i = 0;
+            let currentPos = '';
+
+            while (i < lines.length) {
+                let line = lines[i].trim();
+                if (!line) { i++; continue; }
+
+                if (['動詞', '名詞', '形容詞', '副詞', '接続詞', '前置詞', '代名詞'].includes(line)) {
+                    currentPos = line; i++; continue;
+                }
+                if (line.match(/^\d+～$/)) { i++; continue; }
+
+                if (line.match(/^\d{4}$/)) {
+                    const wordData = {
+                        id: line,
+                        word: lines[i + 1] ? lines[i + 1].trim().replace(/⚠\S+\s*/g, '') : '',
+                        pronunciation: lines[i + 2] ? lines[i + 2].trim() : '',
+                        meaning: lines[i + 3] ? lines[i + 3].trim() : '',
+                        notes: '', exampleEn: '', exampleJa: '', pos: currentPos,
+                        status: STATUS_NOT_YET, group: ''
+                    };
+                    i += 4;
+
+                    while (i < lines.length && lines[i] && lines[i].trim() && !lines[i].trim().match(/^\d{4}$/)) {
+                        let optLine = lines[i].trim();
+                        if (optLine.startsWith('★')) {
+                            if (wordData.notes) wordData.notes += ' | ' + optLine.substring(2).trim();
+                            else wordData.notes = optLine.substring(2).trim();
+                        } else if (optLine.startsWith('▶')) {
+                            wordData.exampleEn = optLine.substring(2).trim();
+                            if (i + 1 < lines.length && lines[i + 1] && lines[i + 1].trim() && !lines[i + 1].trim().match(/^\d{4}$/) && !lines[i + 1].trim().startsWith('★') && !lines[i + 1].trim().startsWith('▶')) {
+                                i++;
+                                wordData.exampleJa = lines[i].trim();
+                            }
+                        }
+                        i++;
+                    }
+                    
+                    // 変更点: グループ分けのロジックを更新
+                    const idNum = parseInt(wordData.id, 10);
+                    if (idNum >= 1 && idNum <= 100) wordData.group = GROUP_A;
+                    else if (idNum >= 101 && idNum <= 200) wordData.group = GROUP_B;
+                    else if (idNum >= 201 && idNum <= 300) wordData.group = GROUP_C;
+                    else if (idNum >= 301 && idNum <= 400) wordData.group = GROUP_D;
+                    else if (idNum >= 401 && idNum <= 500) wordData.group = GROUP_E;
+
+                    words.push(wordData);
+                } else {
+                    i++;
+                }
+            }
+            console.log("Total parsed words:", words.length);
+            return words;
+        }
+        
+        function loadDataFromLocalStorage() {
+            const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            if (savedData) {
+                try {
+                    let parsedData = JSON.parse(savedData);
+                    if (Array.isArray(parsedData) && parsedData.length > 0 && ['id', 'word', 'meaning', 'exampleEn', 'exampleJa', 'status', 'group', 'pos'].every(prop => prop in parsedData[0])) {
+                        allWordData = parsedData; console.log("Loaded data from LocalStorage."); return;
+                    }
+                } catch (e) { console.error("localStorage読み込み失敗:", e); }
+            }
+            console.log("No valid data in LocalStorage, parsing text data.");
+            allWordData = parseWordData(wordTextData);
+            if (!Array.isArray(allWordData)) { console.error("データパース失敗。allWordDataを空配列で初期化。"); allWordData = []; }
+        }
+
+        function saveDataToLocalStorage() {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allWordData));
+            console.log("Data saved to LocalStorage.");
+        }
+
+        function countWordsForFilters() {
+            // 変更点: グループEのカウンターを追加
+            const groupCounts = { [ALL_GROUPS]: 0, [GROUP_A]: 0, [GROUP_B]: 0, [GROUP_C]: 0, [GROUP_D]: 0, [GROUP_E]: 0 };
+            const statusCounts = { [ALL_STATUSES]: 0, [STATUS_NOT_YET]: 0, [STATUS_LEARNED]: 0, [STATUS_PERFECT]: 0 };
+            let tempFilteredByGroup = [];
+            if (currentGroupFilter === ALL_GROUPS) { tempFilteredByGroup = [...allWordData];
+            } else { tempFilteredByGroup = allWordData.filter(word => word.group === currentGroupFilter); }
+            allWordData.forEach(word => { if (groupCounts.hasOwnProperty(word.group)) groupCounts[word.group]++; groupCounts[ALL_GROUPS]++; });
+            tempFilteredByGroup.forEach(word => { if (statusCounts.hasOwnProperty(word.status)) statusCounts[word.status]++; statusCounts[ALL_STATUSES]++; });
+            return { groupCounts, statusCounts };
+        }
+
+        function updateFilterButtonLabels() {
+            const { groupCounts, statusCounts } = countWordsForFilters();
+            Object.keys(groupFilterButtons).forEach(key => {
+                const button = groupFilterButtons[key]; if(!button) return;
+                const baseText = button.dataset.rangePrefix || button.dataset.baseText || button.textContent.split(' (')[0];
+                button.dataset.baseText = baseText;
+                button.textContent = `${baseText} (${groupCounts[key] || 0})`;
+            });
+            Object.keys(statusFilterButtons).forEach(key => {
+                const button = statusFilterButtons[key]; if(!button) return;
+                const baseText = button.dataset.baseText || button.textContent.split(' (')[0];
+                button.dataset.baseText = baseText;
+                button.textContent = `${baseText} (${statusCounts[key] || 0})`;
+            });
+        }
+        
+        function applyFiltersAndPrepareDisplayList() {
+            let tempWords = allWordData;
+            if (currentGroupFilter !== ALL_GROUPS) { tempWords = tempWords.filter(word => word.group === currentGroupFilter); }
+            if (currentStatusFilter !== ALL_STATUSES) { tempWords = tempWords.filter(word => word.status === currentStatusFilter); }
+            if (isRandomMode) {
+                if (seekBar) { seekBar.style.display = 'none'; seekBar.disabled = true; }
+                if (tempWords.length > 0) {
+                    let shuffled = [...tempWords];
+                    for (let i = shuffled.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; }
+                    currentFilteredAndShuffledWords = shuffled;
+                } else { currentFilteredAndShuffledWords = []; }
+            } else {
+                if (seekBar) { seekBar.style.display = 'block'; seekBar.disabled = false; }
+                currentFilteredAndShuffledWords = [...tempWords];
+            }
+            currentWordIndexInList = 0; showingMeaning = false;
+            updateSeekBarRange(); updateCardDisplay(); updateActiveFilterButtonsUI(); updateFilterButtonLabels();
+        }
+
+        function updateSeekBarRange() {
+            if (!seekBar) return; 
+            if (currentFilteredAndShuffledWords.length > 0) {
+                seekBar.max = currentFilteredAndShuffledWords.length - 1;
+                seekBar.value = currentWordIndexInList;
+                seekBar.disabled = isRandomMode;
+            } else {
+                seekBar.max = 0; seekBar.value = 0; seekBar.disabled = true;
+            }
+        }
+        
+        function updateCardDisplay() {
+            if (currentFilteredAndShuffledWords.length === 0 || currentWordIndexInList < 0 || currentWordIndexInList >= currentFilteredAndShuffledWords.length) {
+                if (flashcardArea) flashcardArea.classList.add('hidden');
+                if (noWordsMessageElement) noWordsMessageElement.classList.remove('hidden');
+                if (progressIndicatorElement) progressIndicatorElement.textContent = "0 / 0";
+                if (statusMessageElement) statusMessageElement.textContent = "この条件に一致する単語はありません。";
+                Object.values(statusButtons).forEach(btn => { if(btn) btn.disabled = true; });
+                if (prevButton) prevButton.disabled = true;
+                if (nextButton) nextButton.disabled = true;
+                if (playAudioButton) playAudioButton.style.display = 'none';
+                if (seekBar) seekBar.disabled = true;
+                return;
+            }
+            if (flashcardArea) flashcardArea.classList.remove('hidden');
+            if (noWordsMessageElement) noWordsMessageElement.classList.add('hidden');
+            Object.values(statusButtons).forEach(btn => { if(btn) btn.disabled = false; });
+            if(prevButton) prevButton.disabled = false;
+            if(nextButton) nextButton.disabled = false;
+
+            const currentWordObject = currentFilteredAndShuffledWords[currentWordIndexInList];
+            if (!currentWordObject) { console.error("updateCardDisplay: currentWordObject is undefined!"); return; }
+
+            if(wordDisplayElement) wordDisplayElement.textContent = currentWordObject.word;
+            if(posSpan) posSpan.textContent = currentWordObject.pos;
+            if(pronunciationSpan) pronunciationSpan.textContent = currentWordObject.pronunciation;
+            if(meaningSpan) meaningSpan.textContent = currentWordObject.meaning;
+            if(wordIdSpan) wordIdSpan.textContent = currentWordObject.id;
+
+            if (currentWordObject.notes) {
+                if(notesSpan) notesSpan.textContent = currentWordObject.notes;
+                if(notesP) notesP.classList.remove('hidden');
+            } else {
+                if(notesP) notesP.classList.add('hidden');
+            }
+            if (currentWordObject.exampleEn) {
+                if(exampleEnSpan) exampleEnSpan.textContent = currentWordObject.exampleEn;
+                if(exampleJaSpan) exampleJaSpan.textContent = currentWordObject.exampleJa;
+                if(exampleEnP) exampleEnP.classList.remove('hidden');
+                if(exampleJaP) exampleJaP.classList.remove('hidden');
+            } else {
+                if(exampleEnP) exampleEnP.classList.add('hidden');
+                if(exampleJaP) exampleJaP.classList.add('hidden');
+            }
+
+            if (showingMeaning) {
+                if(detailsDisplayElement) detailsDisplayElement.classList.remove('hidden');
+                if(wordDisplayElement) wordDisplayElement.classList.add('hidden');
+                if(flashcardElement) flashcardElement.classList.add('showing-meaning');
+                if (playAudioButton) playAudioButton.style.display = 'none';
+            } else {
+                if(detailsDisplayElement) detailsDisplayElement.classList.add('hidden');
+                if(wordDisplayElement) wordDisplayElement.classList.remove('hidden');
+                if(flashcardElement) flashcardElement.classList.remove('showing-meaning');
+                if (playAudioButton) playAudioButton.style.display = (typeof speechSynthesis !== 'undefined' && voices.length > 0) ? 'block' : 'none';
+            }
+            Object.values(statusButtons).forEach(btn => { if(btn) btn.classList.remove('selected'); });
+            if (statusButtons[currentWordObject.status]) { statusButtons[currentWordObject.status].classList.add('selected'); }
+            
+            let statusText = "";
+            switch (currentWordObject.status) { case STATUS_LEARNED: statusText = '「覚えた」'; break; case STATUS_PERFECT: statusText = '「完璧！」'; break; default: statusText = '「まだ」'; break; }
+            let baseMessage = `この単語は ${statusText} 状態です。 (グループ: ${currentWordObject.group})`;
+            if (showingMeaning) { if(statusMessageElement) statusMessageElement.textContent = baseMessage + ' カードクリックで単語に戻ります。';
+            } else { if(statusMessageElement) statusMessageElement.textContent = baseMessage + ' カードクリックで詳細を表示。'; }
+            if(progressIndicatorElement) progressIndicatorElement.textContent = `${currentFilteredAndShuffledWords.length > 0 ? currentWordIndexInList + 1 : 0} / ${currentFilteredAndShuffledWords.length}`;
+            updateSeekBarRange();
+        }
+        
+        function updateActiveFilterButtonsUI() {
+            Object.values(groupFilterButtons).forEach(btn => { if(btn) btn.classList.remove('active-group-filter'); });
+            if (groupFilterButtons[currentGroupFilter]) { groupFilterButtons[currentGroupFilter].classList.add('active-group-filter'); }
+            Object.values(statusFilterButtons).forEach(btn => { if(btn) btn.classList.remove('active-status-filter'); });
+            if (statusFilterButtons[currentStatusFilter]) { statusFilterButtons[currentStatusFilter].classList.add('active-status-filter'); }
+        }
+
+        // --- イベントリスナー ---
+        if (flashcardElement) { flashcardElement.addEventListener('click', (event) => { if (playAudioButton && playAudioButton.contains(event.target)) { return; } if (currentFilteredAndShuffledWords.length === 0) return; showingMeaning = !showingMeaning; updateCardDisplay(); }); }
+        if (playAudioButton) { playAudioButton.addEventListener('click', (event) => { event.stopPropagation(); if (currentFilteredAndShuffledWords.length === 0 || showingMeaning) return; const currentWordObject = currentFilteredAndShuffledWords[currentWordIndexInList]; if (!currentWordObject || !currentWordObject.word) return; if (synth.speaking) { synth.cancel(); } const utterance = new SpeechSynthesisUtterance(currentWordObject.word); const englishVoice = voices.find(voice => voice.lang.startsWith('en-')); if (englishVoice) { utterance.voice = englishVoice; } else { utterance.lang = 'en-US'; } utterance.pitch = 1; utterance.rate = 0.9; utterance.onstart = () => { playAudioButton.classList.add('playing'); playAudioButton.disabled = true; }; utterance.onend = () => { playAudioButton.classList.remove('playing'); playAudioButton.disabled = false; }; utterance.onerror = (e) => { console.error('SpeechSynthesisUtterance.onerror', e); playAudioButton.classList.remove('playing'); playAudioButton.disabled = false; if(statusMessageElement) statusMessageElement.textContent = "音声の再生に失敗しました。"; }; synth.speak(utterance); }); }
+        Object.values(statusButtons).forEach(button => { if(button) button.addEventListener('click', (event) => { if (currentFilteredAndShuffledWords.length === 0) return; const newStatus = event.target.closest('button').dataset.status; const currentWordObject = currentFilteredAndShuffledWords[currentWordIndexInList]; if (!currentWordObject) return; const originalWord = allWordData.find(word => word.id === currentWordObject.id); if (originalWord) { originalWord.status = newStatus; } saveDataToLocalStorage(); const wordBeforeReFilter = currentWordObject.word; applyFiltersAndPrepareDisplayList(); const newIdx = currentFilteredAndShuffledWords.findIndex(w => w.word === wordBeforeReFilter && w.status === newStatus); if (newIdx !== -1) { currentWordIndexInList = newIdx; } else { currentWordIndexInList = currentFilteredAndShuffledWords.length > 0 ? 0 : -1; } updateCardDisplay(); if(statusMessageElement) statusMessageElement.textContent = `「${currentWordObject.word}」を「${newStatus === STATUS_NOT_YET ? 'まだ' : newStatus === STATUS_LEARNED ? '覚えた' : '完璧！'}」にしました。`; }); });
+        if (prevButton) prevButton.addEventListener('click', () => { if (currentFilteredAndShuffledWords.length === 0) return; if (currentWordIndexInList > 0) { currentWordIndexInList--; } else { currentWordIndexInList = currentFilteredAndShuffledWords.length - 1; } showingMeaning = false; synth.cancel(); updateCardDisplay(); });
+        if (nextButton) nextButton.addEventListener('click', () => { if (currentFilteredAndShuffledWords.length === 0) return; if (currentWordIndexInList < currentFilteredAndShuffledWords.length - 1) { currentWordIndexInList++; } else { currentWordIndexInList = 0; } showingMeaning = false; synth.cancel(); updateCardDisplay(); });
+        if (seekBar) seekBar.addEventListener('input', (event) => { if (currentFilteredAndShuffledWords.length > 0 && !isRandomMode) { currentWordIndexInList = parseInt(event.target.value, 10); showingMeaning = false; synth.cancel(); updateCardDisplay(); } });
+        Object.keys(groupFilterButtons).forEach(groupKey => { if(groupFilterButtons[groupKey]) groupFilterButtons[groupKey].addEventListener('click', () => { currentGroupFilter = groupKey; applyFiltersAndPrepareDisplayList(); }); });
+        Object.keys(statusFilterButtons).forEach(statusKey => { if(statusFilterButtons[statusKey]) statusFilterButtons[statusKey].addEventListener('click', () => { currentStatusFilter = statusKey; applyFiltersAndPrepareDisplayList(); }); });
+        if (randomModeCheckbox) randomModeCheckbox.addEventListener('change', (event) => { isRandomMode = event.target.checked; applyFiltersAndPrepareDisplayList(); if(statusMessageElement) statusMessageElement.textContent = `表示モードを「${isRandomMode ? 'ランダム' : '順番'}」に変更しました。`; });
+        if (settingsToggleButton) settingsToggleButton.addEventListener('click', (event) => { event.stopPropagation(); if(settingsDropdownMenu) settingsDropdownMenu.style.display = settingsDropdownMenu.style.display === 'block' ? 'none' : 'block'; });
+        document.body.addEventListener('click', (event) => { if (settingsDropdownMenu && settingsDropdownMenu.style.display === 'block' && !settingsDropdownMenu.contains(event.target) && (!settingsToggleButton || !settingsToggleButton.contains(event.target))) { settingsDropdownMenu.style.display = 'none'; } });
+        if (resetDataButton) resetDataButton.addEventListener('click', () => { if (confirm("本当に学習記録をリセットしますか？...")) { localStorage.removeItem(LOCAL_STORAGE_KEY); currentGroupFilter = ALL_GROUPS; currentStatusFilter = ALL_STATUSES; isRandomMode = false; if(randomModeCheckbox) randomModeCheckbox.checked = false; showingMeaning = false; allWordData = parseWordData(wordTextData); if (!Array.isArray(allWordData)) { allWordData = []; } allWordData.forEach(word => word.status = STATUS_NOT_YET); saveDataToLocalStorage(); applyFiltersAndPrepareDisplayList(); if(settingsDropdownMenu) settingsDropdownMenu.style.display = 'none'; if(statusMessageElement) statusMessageElement.textContent = "学習記録をリセットし、データを再読み込みしました。"; }});
+
+        function initializeApp() {
+            if (randomModeCheckbox) randomModeCheckbox.checked = isRandomMode;
+            loadDataFromLocalStorage();
+            if (!Array.isArray(allWordData)) {
+                console.error("allWordDataが配列として初期化されていません。");
+                if (document.body) { document.body.innerHTML = "<p style='color:red; text-align:center;'>単語データの読み込みエラー</p>"; }
+                return;
+            }
+            if (allWordData.length === 0 && wordTextData.trim() !== "") {
+                console.error("単語データのパースに失敗したようです。Total parsed wordsが0でした。");
+                 if (document.body) { document.body.innerHTML = "<p style='color:red; text-align:center;'>単語データ解析エラー</p>"; }
+                return;
+            } else if (allWordData.length === 0) { console.warn("単語データが0件です。"); }
+
+            currentGroupFilter = ALL_GROUPS; currentStatusFilter = ALL_STATUSES;
+            isRandomMode = false; if (randomModeCheckbox) randomModeCheckbox.checked = false;
+            if (seekBar) { seekBar.value = 0; seekBar.min = 0; }
+            applyFiltersAndPrepareDisplayList();
+        }
+        initializeApp();
+    </script>
+</body>
+</html>
